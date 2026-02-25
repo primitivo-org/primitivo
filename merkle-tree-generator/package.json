@@ -1,0 +1,18 @@
+{
+  "name": "merkle-tree-generator",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "root": "${BUN:-bun} run src/cli.ts root",
+    "proof": "${BUN:-bun} run src/cli.ts proof",
+    "test": "${BUN:-bun} test"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.98.4",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "@types/node": "25.3.0"
+  }
+}

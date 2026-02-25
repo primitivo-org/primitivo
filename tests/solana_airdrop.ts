@@ -35,7 +35,7 @@ describe("solana_airdrop integration", () => {
   let proof: Buffer[] | undefined;
 
   it("step 1: create users and merkle root", async () => {
-    users = Array.from({ length: 5 }, (_, i) => ({
+    users = Array.from({ length: 41 }, (_, i) => ({
       keypair: Keypair.generate(),
       amount: BigInt(500_000 + i * 100_000),
     }));
@@ -123,7 +123,7 @@ describe("solana_airdrop integration", () => {
       return;
     }
 
-    claimant = users[2];
+    claimant = users[40];
     claimantAmountBn = new anchor.BN(claimant.amount.toString());
 
     const airdropSig = await provider.connection.requestAirdrop(claimant.keypair.publicKey, 2 * anchor.web3.LAMPORTS_PER_SOL);
@@ -155,7 +155,7 @@ describe("solana_airdrop integration", () => {
       this.skip();
       return;
     }
-    
+
     await program.methods
       .claim(claimantAmountBn, proof.map((p) => [...p] as number[]))
       .accountsPartial({

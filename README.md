@@ -1,59 +1,101 @@
 # Solana Airdrop (Anchor + Merkle)
 
-Minimal setup for an SPL-token merkle airdrop where leaves are `(address, amount)`.
+Merkle airdrop program where each leaf is `(address, amount)`.
 
-## Prerequisites
-
-- Solana CLI + local validator
-- Anchor CLI
-- Node.js + npm
-- Bun (for `merkle-tree-generator`)
-
-## Build and Deploy
+## Deploy
 
 ```bash
-# 1) build program
+# build
 anchor build
 
-# 2) start local validator (in another terminal)
+# start local validator (separate terminal)
 solana-test-validator --reset
 
-# 3) deploy to local validator
+# deploy
 ANCHOR_PROVIDER_URL=http://127.0.0.1:8899 \
 ANCHOR_WALLET=$HOME/.config/solana/id.json \
 anchor deploy
 ```
 
-## Merkle Tree Generator
+## Generate Merkle Data
 
-Input file format (`merkle-tree-generator/addresses.txt`):
+Airdrop file format (`address amount` per line):
 
 ```txt
-<address> <amount>
-<address> <amount>
+BNGRxgaJ9TBB2RScFDhZCxvHoXqtpJnG6BMTZjfeZETj 100
+55XMjVxUhLqErahWDJ1gikHhxAufWivYkTvs4DcRh7ry 200
+AXruuuQaXDZQd7t4pJfFTp1zDpYiDg6QMCBfk9UTHQoN 300
 ```
-
-
-Run generator:
 
 ```bash
 cd merkle-tree-generator
-# if bun is on PATH
 bun install
 bun run root --input ./addresses.txt
 bun run proof --input ./addresses.txt --address <WALLET>
+```
 
-`proof` output includes the exact `amount` for the address; pass both `amount` and `proof` to on-chain `claim`.
+`proof` output includes the exact `amount`. On claim, pass both `amount` and `proof`.
 
-## Tests
+## Initialize Distributor Script
+
+After deploy, initialize distributor using the generated root and funding.
+
+### Option A: create a new SPL mint (optional)
 
 ```bash
+npm run init:distributor -- \
+  --program-id <PROGRAM_ID> \
+  --airdrop-file ./merkle-tree-generator/addresses.txt \
+  --id 1 \
+  --create-mint \
+  --decimals 6
+```
 
-# merkle generator unit tests
-cd merkle-tree-generator
-bun run test
+### Option B: use existing mint + source token account
 
-# integration test (requires running local validator + deployed program)
-cd ..
-anchor test
+```bash
+npm run init:distributor -- \
+  --program-id <PROGRAM_ID> \
+  --airdrop-file ./merkle-tree-generator/addresses.txt \
+  --id 1 \
+  --mint <MINT_PUBKEY> \
+  --source-token-account <SOURCE_TOKEN_ACCOUNT>
+```
+
+Optional flag:
+
+- `--funding-amount <u64>` to override default funding (default is sum of all amounts in the list).
+
+The script prints distributor PDA, vault PDA, mint, tx signature, and merkle root.
+
+## Claim Script
+
+Use proof output from `bun run proof ...`:
+
+```bash
+npm run claim -- \
+  --program-id <PROGRAM_ID> \
+  --distributor <DISTRIBUTOR_PDA> \
+  --proof-file ./proof.json \
+  --create-token-account
+```
+
+Or provide an existing token account:
+
+```bash
+npm run claim -- \
+  --program-id <PROGRAM_ID> \
+  --distributor <DISTRIBUTOR_PDA> \
+  --proof-file ./proof.json \
+  --claimant-token-account <TOKEN_ACCOUNT>
+```
+
+With Anchor alias:
+
+```bash
+anchor run claim -- \
+  --program-id <PROGRAM_ID> \
+  --distributor <DISTRIBUTOR_PDA> \
+  --proof-file ./proof.json \
+  --create-token-account
 ```

@@ -12,8 +12,11 @@ solana_airdrop = "5DmKC7Umm2ntYMHPnfjmUCsyqjE4rRbU2we9Vw6KzPPi"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+# cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "npx ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+init = "npm run init:distributor --"
+claim = "npm run claim --"

@@ -125,7 +125,7 @@ pub struct InitializeDistributor<'info> {
     #[account(
         init,
         payer = authority,
-        space = 8 + Distributor::LEN,
+        space = 8 + Distributor::INIT_SPACE,
         seeds = [
             b"distributor",
             authority.key().as_ref(),
@@ -195,6 +195,7 @@ pub struct Claim<'info> {
 }
 
 #[account]
+#[derive(InitSpace)]
 pub struct Distributor {
     pub authority: Pubkey,
     pub mint: Pubkey,
@@ -207,14 +208,12 @@ pub struct Distributor {
     pub vault_bump: u8,
 }
 
-impl Distributor {
-    pub const LEN: usize = (32 * 4) + 8 + 4 + 8 + 2;
-}
-
 #[account]
+#[derive(InitSpace)]
 pub struct ClaimBitmap {
     pub distributor: Pubkey,
     pub max_claims: u32,
+    #[max_len(0)]
     pub bitmap: Vec<u8>,
     pub bump: u8,
 }
@@ -225,7 +224,7 @@ impl ClaimBitmap {
     }
 
     pub fn space(max_claims: u32) -> usize {
-        32 + 4 + 4 + Self::bitmap_len(max_claims) + 1
+        Self::INIT_SPACE + Self::bitmap_len(max_claims)
     }
 
     pub fn is_claimed(&self, index: u32) -> bool {

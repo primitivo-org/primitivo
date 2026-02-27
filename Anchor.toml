@@ -6,17 +6,17 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-solana_airdrop = "5DmKC7Umm2ntYMHPnfjmUCsyqjE4rRbU2we9Vw6KzPPi"
+merke_airdrop = "Dpjs4ihZc6T9Y6mBfgDcmRavoFysLRDpdW5fezbxGZ33"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-# cluster = "localnet"
-cluster = "devnet"
+cluster = "localnet"
+# cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "npx ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
-init = "npm run init:distributor --"
 claim = "npm run claim --"
+init = "npm run init:distributor --"
+test = "npx ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

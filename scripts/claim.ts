@@ -80,7 +80,7 @@ async function main() {
   }
   const proof = proofFile.proof.map(hexTo32Bytes);
 
-  const idlPath = resolve("target/idl/solana_airdrop.json");
+  const idlPath = resolve("target/idl/merke_airdrop.json");
   const idl = JSON.parse(readFileSync(idlPath, "utf8"));
   const program = new anchor.Program(idl, provider) as anchor.Program<any>;
 

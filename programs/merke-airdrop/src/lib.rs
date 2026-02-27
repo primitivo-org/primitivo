@@ -6,13 +6,13 @@
 #![allow(deprecated)]
 
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::hash::hashv;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
+use primitivo::{bitmap_len, hash_leaf, is_claimed, set_claimed, verify_proof};
 
-declare_id!("5DmKC7Umm2ntYMHPnfjmUCsyqjE4rRbU2we9Vw6KzPPi");
+declare_id!("Dpjs4ihZc6T9Y6mBfgDcmRavoFysLRDpdW5fezbxGZ33");
 
 #[program]
-pub mod solana_airdrop {
+pub mod merke_airdrop {
     use super::*;
 
     pub fn initialize_distributor(
@@ -38,7 +38,7 @@ pub mod solana_airdrop {
         let bitmap = &mut ctx.accounts.claim_bitmap;
         bitmap.distributor = distributor.key();
         bitmap.max_claims = max_claims;
-        bitmap.bitmap = vec![0u8; ClaimBitmap::bitmap_len(max_claims)];
+        bitmap.bitmap = vec![0u8; bitmap_len(max_claims)];
         bitmap.bump = ctx.bumps.claim_bitmap;
 
         if total_funding_amount > 0 {
@@ -219,30 +219,20 @@ pub struct ClaimBitmap {
 }
 
 impl ClaimBitmap {
-    pub fn bitmap_len(max_claims: u32) -> usize {
-        (max_claims as usize).div_ceil(8)
-    }
-
     pub fn space(max_claims: u32) -> usize {
-        Self::INIT_SPACE + Self::bitmap_len(max_claims)
+        Self::INIT_SPACE + bitmap_len(max_claims)
     }
 
     pub fn is_claimed(&self, index: u32) -> bool {
-        let byte_index = (index / 8) as usize;
-        let bit_mask = 1u8 << (index % 8);
-        self.bitmap[byte_index] & bit_mask != 0
+        is_claimed(&self.bitmap, index)
     }
 
     pub fn set_claimed(&mut self, index: u32) -> Result<()> {
-        let byte_index = (index / 8) as usize;
-        let bit_mask = 1u8 << (index % 8);
-
-        let byte = self
-            .bitmap
-            .get_mut(byte_index)
-            .ok_or(AirdropError::InvalidClaimIndex)?;
-        *byte |= bit_mask;
-        Ok(())
+        if set_claimed(&mut self.bitmap, index) {
+            Ok(())
+        } else {
+            err!(AirdropError::InvalidClaimIndex)
+        }
     }
 }
 
@@ -272,36 +262,10 @@ pub enum AirdropError {
     InvalidBitmap,
 }
 
-pub fn hash_leaf(index: u32, recipient: &Pubkey, amount: u64) -> [u8; 32] {
-    let index_bytes = index.to_le_bytes();
-    let amount_bytes = amount.to_le_bytes();
-    hashv(&[
-        b"merkle_airdrop",
-        &index_bytes,
-        recipient.as_ref(),
-        &amount_bytes,
-    ])
-    .to_bytes()
-}
-
-pub fn hash_pair(a: &[u8; 32], b: &[u8; 32]) -> [u8; 32] {
-    let (left, right) = if a <= b { (a, b) } else { (b, a) };
-    hashv(&[left, right]).to_bytes()
-}
-
-pub fn verify_proof(leaf: [u8; 32], proof: &[[u8; 32]], root: [u8; 32]) -> bool {
-    let mut computed = leaf;
-
-    for sibling in proof {
-        computed = hash_pair(&computed, sibling);
-    }
-
-    computed == root
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use primitivo::hash_pair;
     use std::str::FromStr;
 
     fn pk(s: &str) -> Pubkey {

@@ -3,7 +3,7 @@ import { Program, web3 } from "@coral-xyz/anchor";
 import { TOKEN_PROGRAM_ID, createAccount, createMint, getAccount, mintTo } from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
-import { SolanaAirdrop } from "../target/types/solana_airdrop";
+import { MerkeAirdrop } from "../target/types/merke_airdrop";
 import { AirdropEntry, getProof, getRoot } from "../merkle-tree-generator/src/merkle";
 
 type TestUser = {
@@ -11,11 +11,11 @@ type TestUser = {
   amount: bigint;
 };
 
-describe("solana_airdrop integration", () => {
+describe("merke_airdrop integration", () => {
   anchor.setProvider(anchor.AnchorProvider.env());
 
   const provider = anchor.getProvider() as anchor.AnchorProvider;
-  const program = anchor.workspace.SolanaAirdrop as Program<SolanaAirdrop>;
+  const program = anchor.workspace.MerkeAirdrop as Program<MerkeAirdrop>;
   const authority = provider.wallet;
 
   let users: TestUser[] | undefined;

@@ -27,15 +27,17 @@ describe("solana_airdrop integration", () => {
   let sourceTokenAccount: PublicKey | undefined;
   let distributorPda: PublicKey | undefined;
   let vaultPda: PublicKey | undefined;
+  let claimBitmapPda: PublicKey | undefined;
+  let maxClaims: number | undefined;
 
   let claimant: TestUser | undefined;
+  let claimantIndex: number | undefined;
   let claimantAmountBn: anchor.BN | undefined;
   let claimantTokenAccount: PublicKey | undefined;
-  let claimReceiptPda: PublicKey | undefined;
   let proof: Buffer[] | undefined;
 
   it("step 1: create users and merkle root", async () => {
-    users = Array.from({ length: 41 }, (_, i) => ({
+    users = Array.from({ length: 50 }, (_, i) => ({
       keypair: Keypair.generate(),
       amount: BigInt(500_000 + i * 100_000),
     }));
@@ -47,6 +49,7 @@ describe("solana_airdrop integration", () => {
 
     merkleRoot = getRoot(entries);
     distributorId = new anchor.BN(1);
+    maxClaims = users.length;
     totalFundingAmount = new anchor.BN(users.reduce((sum, u) => sum + Number(u.amount), 0));
 
     mint = await createMint(
@@ -93,22 +96,27 @@ describe("solana_airdrop integration", () => {
     );
 
     [vaultPda] = PublicKey.findProgramAddressSync([Buffer.from("vault"), distributorPda.toBuffer()], program.programId);
+    [claimBitmapPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("bitmap"), distributorPda.toBuffer()],
+      program.programId,
+    );
   });
 
   it("step 2: initialize distributor", async function () {
-    if (!distributorId || !merkleRoot || !totalFundingAmount || !mint || !sourceTokenAccount || !distributorPda || !vaultPda) {
+    if (!distributorId || !merkleRoot || !maxClaims || !totalFundingAmount || !mint || !sourceTokenAccount || !distributorPda || !vaultPda || !claimBitmapPda) {
       this.skip();
       return;
     }
 
     const ix = await program.methods
-      .initializeDistributor(distributorId, [...merkleRoot] as number[], totalFundingAmount)
+      .initializeDistributor(distributorId, [...merkleRoot] as number[], maxClaims, totalFundingAmount)
       .accountsPartial({
         authority: authority.publicKey,
         mint,
         sourceTokenAccount,
         distributor: distributorPda,
         vault: vaultPda,
+        claimBitmap: claimBitmapPda,
         systemProgram: anchor.web3.SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
@@ -123,12 +131,9 @@ describe("solana_airdrop integration", () => {
       return;
     }
 
-    claimant = users[40];
+    claimantIndex = 40;
+    claimant = users[claimantIndex];
     claimantAmountBn = new anchor.BN(claimant.amount.toString());
-
-    const airdropSig = await provider.connection.requestAirdrop(claimant.keypair.publicKey, 2 * anchor.web3.LAMPORTS_PER_SOL);
-    const latest = await provider.connection.getLatestBlockhash();
-    await provider.connection.confirmTransaction({ signature: airdropSig, ...latest }, "confirmed");
 
     claimantTokenAccount = await createAccount(
       provider.connection,
@@ -142,30 +147,25 @@ describe("solana_airdrop integration", () => {
 
     const generatedProof = getProof(entries, claimant.keypair.publicKey.toBase58());
     proof = generatedProof.proof;
+    assert.equal(generatedProof.index, claimantIndex);
     assert.equal(generatedProof.amount.toString(), claimant.amount.toString());
-
-    [claimReceiptPda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("claim"), distributorPda.toBuffer(), claimant.keypair.publicKey.toBuffer()],
-      program.programId,
-    );
   });
 
   it("step 4: execute claim", async function () {
-    if (!claimant || !claimantAmountBn || !proof || !claimantTokenAccount || !claimReceiptPda || !distributorPda || !mint || !vaultPda) {
+    if (!claimant || claimantIndex === undefined || !claimantAmountBn || !proof || !claimantTokenAccount || !distributorPda || !claimBitmapPda || !mint || !vaultPda) {
       this.skip();
       return;
     }
 
     await program.methods
-      .claim(claimantAmountBn, proof.map((p) => [...p] as number[]))
+      .claim(claimantIndex, claimantAmountBn, proof.map((p) => [...p] as number[]))
       .accountsPartial({
         claimant: claimant.keypair.publicKey,
         distributor: distributorPda,
         mint,
         vault: vaultPda,
         claimantTokenAccount,
-        claimReceipt: claimReceiptPda,
-        systemProgram: anchor.web3.SystemProgram.programId,
+        claimBitmap: claimBitmapPda,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .signers([claimant.keypair])
@@ -183,29 +183,28 @@ describe("solana_airdrop integration", () => {
   });
 
   it("step 6: assert double claim fails", async function () {
-    if (!claimant || !claimantAmountBn || !proof || !claimantTokenAccount || !claimReceiptPda || !distributorPda || !mint || !vaultPda) {
+    if (!claimant || claimantIndex === undefined || !claimantAmountBn || !proof || !claimantTokenAccount || !distributorPda || !claimBitmapPda || !mint || !vaultPda) {
       this.skip();
       return;
     }
 
     try {
       await program.methods
-        .claim(claimantAmountBn, proof.map((p) => [...p] as number[]))
+        .claim(claimantIndex, claimantAmountBn, proof.map((p) => [...p] as number[]))
         .accountsPartial({
           claimant: claimant.keypair.publicKey,
           distributor: distributorPda,
           mint,
           vault: vaultPda,
           claimantTokenAccount,
-          claimReceipt: claimReceiptPda,
-          systemProgram: anchor.web3.SystemProgram.programId,
+          claimBitmap: claimBitmapPda,
           tokenProgram: TOKEN_PROGRAM_ID,
         })
         .signers([claimant.keypair])
         .rpc();
       assert.fail("double claim should fail");
     } catch (e) {
-      assert.include(`${e}`, "already in use");
+      assert.include(`${e}`, "AlreadyClaimed");
     }
   });
 });

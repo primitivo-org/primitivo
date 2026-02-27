@@ -19,17 +19,27 @@ pub mod solana_airdrop {
         ctx: Context<InitializeDistributor>,
         id: u64,
         merkle_root: [u8; 32],
+        max_claims: u32,
         total_funding_amount: u64,
     ) -> Result<()> {
+        require!(max_claims > 0, AirdropError::InvalidMaxClaims);
+
         let distributor = &mut ctx.accounts.distributor;
         distributor.authority = ctx.accounts.authority.key();
         distributor.mint = ctx.accounts.mint.key();
         distributor.vault = ctx.accounts.vault.key();
         distributor.merkle_root = merkle_root;
         distributor.id = id;
+        distributor.max_claims = max_claims;
         distributor.claimed_amount = 0;
         distributor.bump = ctx.bumps.distributor;
         distributor.vault_bump = ctx.bumps.vault;
+
+        let bitmap = &mut ctx.accounts.claim_bitmap;
+        bitmap.distributor = distributor.key();
+        bitmap.max_claims = max_claims;
+        bitmap.bitmap = vec![0u8; ClaimBitmap::bitmap_len(max_claims)];
+        bitmap.bump = ctx.bumps.claim_bitmap;
 
         if total_funding_amount > 0 {
             let cpi_accounts = Transfer {
@@ -45,17 +55,26 @@ pub mod solana_airdrop {
         Ok(())
     }
 
-    pub fn claim(ctx: Context<Claim>, amount: u64, proof: Vec<[u8; 32]>) -> Result<()> {
+    pub fn claim(ctx: Context<Claim>, index: u32, amount: u64, proof: Vec<[u8; 32]>) -> Result<()> {
         require!(amount > 0, AirdropError::InvalidClaimAmount);
 
         let distributor = &mut ctx.accounts.distributor;
+        require!(
+            index < distributor.max_claims,
+            AirdropError::InvalidClaimIndex
+        );
+
         let claimant = ctx.accounts.claimant.key();
 
-        let leaf = hash_leaf(&claimant, amount);
+        let leaf = hash_leaf(index, &claimant, amount);
         require!(
             verify_proof(leaf, &proof, distributor.merkle_root),
             AirdropError::InvalidProof
         );
+
+        let bitmap = &mut ctx.accounts.claim_bitmap;
+        require!(!bitmap.is_claimed(index), AirdropError::AlreadyClaimed);
+        bitmap.set_claimed(index)?;
 
         distributor.claimed_amount = distributor
             .claimed_amount
@@ -84,18 +103,12 @@ pub mod solana_airdrop {
         );
         token::transfer(cpi_ctx, amount)?;
 
-        let receipt = &mut ctx.accounts.claim_receipt;
-        receipt.distributor = distributor.key();
-        receipt.claimant = claimant;
-        receipt.bump = ctx.bumps.claim_receipt;
-        receipt.claimed_slot = Clock::get()?.slot;
-
         Ok(())
     }
 }
 
 #[derive(Accounts)]
-#[instruction(id: u64)]
+#[instruction(id: u64, _merkle_root: [u8; 32], max_claims: u32)]
 pub struct InitializeDistributor<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -133,6 +146,15 @@ pub struct InitializeDistributor<'info> {
     )]
     pub vault: Account<'info, TokenAccount>,
 
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + ClaimBitmap::space(max_claims),
+        seeds = [b"bitmap", distributor.key().as_ref()],
+        bump,
+    )]
+    pub claim_bitmap: Account<'info, ClaimBitmap>,
+
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
 }
@@ -162,15 +184,13 @@ pub struct Claim<'info> {
     pub claimant_token_account: Account<'info, TokenAccount>,
 
     #[account(
-        init,
-        payer = claimant,
-        space = 8 + ClaimReceipt::LEN,
-        seeds = [b"claim", distributor.key().as_ref(), claimant.key().as_ref()],
-        bump,
+        mut,
+        seeds = [b"bitmap", distributor.key().as_ref()],
+        bump = claim_bitmap.bump,
+        has_one = distributor @ AirdropError::InvalidBitmap,
     )]
-    pub claim_receipt: Account<'info, ClaimReceipt>,
+    pub claim_bitmap: Account<'info, ClaimBitmap>,
 
-    pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
 }
 
@@ -181,25 +201,50 @@ pub struct Distributor {
     pub vault: Pubkey,
     pub merkle_root: [u8; 32],
     pub id: u64,
+    pub max_claims: u32,
     pub claimed_amount: u64,
     pub bump: u8,
     pub vault_bump: u8,
 }
 
 impl Distributor {
-    pub const LEN: usize = (32 * 4) + (8 * 2) + 2;
+    pub const LEN: usize = (32 * 4) + 8 + 4 + 8 + 2;
 }
 
 #[account]
-pub struct ClaimReceipt {
+pub struct ClaimBitmap {
     pub distributor: Pubkey,
-    pub claimant: Pubkey,
+    pub max_claims: u32,
+    pub bitmap: Vec<u8>,
     pub bump: u8,
-    pub claimed_slot: u64,
 }
 
-impl ClaimReceipt {
-    pub const LEN: usize = 32 + 32 + 1 + 8;
+impl ClaimBitmap {
+    pub fn bitmap_len(max_claims: u32) -> usize {
+        (max_claims as usize).div_ceil(8)
+    }
+
+    pub fn space(max_claims: u32) -> usize {
+        32 + 4 + 4 + Self::bitmap_len(max_claims) + 1
+    }
+
+    pub fn is_claimed(&self, index: u32) -> bool {
+        let byte_index = (index / 8) as usize;
+        let bit_mask = 1u8 << (index % 8);
+        self.bitmap[byte_index] & bit_mask != 0
+    }
+
+    pub fn set_claimed(&mut self, index: u32) -> Result<()> {
+        let byte_index = (index / 8) as usize;
+        let bit_mask = 1u8 << (index % 8);
+
+        let byte = self
+            .bitmap
+            .get_mut(byte_index)
+            .ok_or(AirdropError::InvalidClaimIndex)?;
+        *byte |= bit_mask;
+        Ok(())
+    }
 }
 
 #[error_code]
@@ -218,11 +263,26 @@ pub enum AirdropError {
     InvalidRecipientAccount,
     #[msg("Claim amount must be greater than 0")]
     InvalidClaimAmount,
+    #[msg("This index has already claimed")]
+    AlreadyClaimed,
+    #[msg("Claim index out of range")]
+    InvalidClaimIndex,
+    #[msg("max_claims must be greater than 0")]
+    InvalidMaxClaims,
+    #[msg("Invalid bitmap account")]
+    InvalidBitmap,
 }
 
-pub fn hash_leaf(recipient: &Pubkey, amount: u64) -> [u8; 32] {
+pub fn hash_leaf(index: u32, recipient: &Pubkey, amount: u64) -> [u8; 32] {
+    let index_bytes = index.to_le_bytes();
     let amount_bytes = amount.to_le_bytes();
-    hashv(&[b"merkle_airdrop", recipient.as_ref(), &amount_bytes]).to_bytes()
+    hashv(&[
+        b"merkle_airdrop",
+        &index_bytes,
+        recipient.as_ref(),
+        &amount_bytes,
+    ])
+    .to_bytes()
 }
 
 pub fn hash_pair(a: &[u8; 32], b: &[u8; 32]) -> [u8; 32] {
@@ -251,15 +311,15 @@ mod tests {
 
     #[test]
     fn hash_pair_is_order_independent() {
-        let a = hash_leaf(&pk("11111111111111111111111111111111"), 10);
-        let b = hash_leaf(&pk("SysvarRent111111111111111111111111111111111"), 20);
+        let a = hash_leaf(0, &pk("11111111111111111111111111111111"), 10);
+        let b = hash_leaf(1, &pk("SysvarRent111111111111111111111111111111111"), 20);
         assert_eq!(hash_pair(&a, &b), hash_pair(&b, &a));
     }
 
     #[test]
     fn verify_proof_accepts_valid_two_leaf_proof() {
-        let leaf_a = hash_leaf(&pk("11111111111111111111111111111111"), 10);
-        let leaf_b = hash_leaf(&pk("SysvarRent111111111111111111111111111111111"), 20);
+        let leaf_a = hash_leaf(0, &pk("11111111111111111111111111111111"), 10);
+        let leaf_b = hash_leaf(1, &pk("SysvarRent111111111111111111111111111111111"), 20);
         let root = hash_pair(&leaf_a, &leaf_b);
 
         assert!(verify_proof(leaf_a, &[leaf_b], root));
@@ -268,9 +328,9 @@ mod tests {
 
     #[test]
     fn verify_proof_rejects_invalid_proof() {
-        let leaf_a = hash_leaf(&pk("11111111111111111111111111111111"), 10);
-        let leaf_b = hash_leaf(&pk("SysvarRent111111111111111111111111111111111"), 20);
-        let leaf_c = hash_leaf(&pk("SysvarC1ock11111111111111111111111111111111"), 30);
+        let leaf_a = hash_leaf(0, &pk("11111111111111111111111111111111"), 10);
+        let leaf_b = hash_leaf(1, &pk("SysvarRent111111111111111111111111111111111"), 20);
+        let leaf_c = hash_leaf(2, &pk("SysvarC1ock11111111111111111111111111111111"), 30);
         let root = hash_pair(&leaf_a, &leaf_b);
 
         assert!(!verify_proof(leaf_a, &[leaf_c], root));

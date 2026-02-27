@@ -138,15 +138,25 @@ async function main() {
     [Buffer.from("vault"), distributorPda.toBuffer()],
     program.programId,
   );
+  const [claimBitmapPda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("bitmap"), distributorPda.toBuffer()],
+    program.programId,
+  );
 
   const txSig = await program.methods
-    .initializeDistributor(idBn, [...merkleRoot] as number[], toU64(fundingAmount, "funding amount"))
+    .initializeDistributor(
+      idBn,
+      [...merkleRoot] as number[],
+      entries.length,
+      toU64(fundingAmount, "funding amount"),
+    )
     .accountsPartial({
       authority: authority.publicKey,
       mint,
       sourceTokenAccount,
       distributor: distributorPda,
       vault: vaultPda,
+      claimBitmap: claimBitmapPda,
       systemProgram: anchor.web3.SystemProgram.programId,
       tokenProgram: TOKEN_PROGRAM_ID,
     })
@@ -161,6 +171,8 @@ async function main() {
         distributorId: idBn.toString(),
         distributor: distributorPda.toBase58(),
         vault: vaultPda.toBase58(),
+        claimBitmap: claimBitmapPda.toBase58(),
+        maxClaims: entries.length,
         mint: mint.toBase58(),
         sourceTokenAccount: sourceTokenAccount.toBase58(),
         fundingAmount: fundingAmount.toString(),

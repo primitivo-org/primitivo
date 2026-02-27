@@ -34,7 +34,7 @@ bun run root --input ./addresses.txt
 bun run proof --input ./addresses.txt --address <WALLET>
 ```
 
-`proof` output includes the exact `amount`. On claim, pass both `amount` and `proof`.
+`proof` output includes `index`, `amount`, and `proof`. On claim, pass all three.
 
 ## Initialize Distributor Script
 
@@ -99,3 +99,5 @@ anchor run claim -- \
   --proof-file ./proof.json \
   --create-token-account
 ```
+
+Claim status is tracked on-chain in a bitmap PDA (`[\"bitmap\", distributor]`) using the merkle `index`.

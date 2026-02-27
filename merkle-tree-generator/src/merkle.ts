@@ -29,9 +29,18 @@ function amountToLeBytes(amount: bigint): Buffer {
   return out;
 }
 
-export function hashLeaf(address: string, amount: bigint): Buffer {
+function indexToLeBytes(index: number): Buffer {
+  if (!Number.isInteger(index) || index < 0 || index > 0xffffffff) {
+    throw new Error("Index must fit in u32");
+  }
+  const out = Buffer.alloc(4);
+  out.writeUInt32LE(index);
+  return out;
+}
+
+export function hashLeaf(index: number, address: string, amount: bigint): Buffer {
   const pubkey = new PublicKey(address);
-  return sha256(Buffer.concat([LEAF_PREFIX, pubkey.toBuffer(), amountToLeBytes(amount)]));
+  return sha256(Buffer.concat([LEAF_PREFIX, indexToLeBytes(index), pubkey.toBuffer(), amountToLeBytes(amount)]));
 }
 
 export function hashPair(a: Buffer, b: Buffer): Buffer {
@@ -133,7 +142,7 @@ export function buildTree(leaves: Buffer[]): Buffer[][] {
 }
 
 export function getRoot(entries: AirdropEntry[]): Buffer {
-  const leaves = entries.map((entry) => hashLeaf(entry.address, entry.amount));
+  const leaves = entries.map((entry, index) => hashLeaf(index, entry.address, entry.amount));
   const tree = buildTree(leaves);
   return tree[tree.length - 1][0];
 }
@@ -154,7 +163,7 @@ export function getProof(
   }
 
   const target = matches[0];
-  const leaves = entries.map((entry) => hashLeaf(entry.address, entry.amount));
+  const leaves = entries.map((entry, index) => hashLeaf(index, entry.address, entry.amount));
   const tree = buildTree(leaves);
   const proof: Buffer[] = [];
 

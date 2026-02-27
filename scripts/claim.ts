@@ -6,6 +6,7 @@ import { createAccount, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
 type ProofFile = {
   address?: string;
+  index?: number;
   amount: string | number;
   proof: string[];
 };
@@ -57,6 +58,7 @@ async function main() {
   const programId = new PublicKey(requireArg("--program-id"));
   const distributor = new PublicKey(requireArg("--distributor"));
   const proofFilePath = requireArg("--proof-file");
+  const indexArg = getArg("--index");
   const claimantTokenAccountArg = getArg("--claimant-token-account");
   const createTokenAccountFlag = hasFlag("--create-token-account");
 
@@ -72,6 +74,10 @@ async function main() {
   }
 
   const amountBn = toU64(BigInt(proofFile.amount), "amount");
+  const index = indexArg ? Number(indexArg) : proofFile.index;
+  if (index === undefined || !Number.isInteger(index) || index < 0 || index > 0xffffffff) {
+    throw new Error("Claim index is required (use --index or include 'index' in proof JSON)");
+  }
   const proof = proofFile.proof.map(hexTo32Bytes);
 
   const idlPath = resolve("target/idl/solana_airdrop.json");
@@ -106,21 +112,20 @@ async function main() {
     throw new Error("Provide --claimant-token-account or use --create-token-account");
   }
 
-  const [claimReceipt] = PublicKey.findProgramAddressSync(
-    [Buffer.from("claim"), distributor.toBuffer(), claimant.publicKey.toBuffer()],
+  const [claimBitmap] = PublicKey.findProgramAddressSync(
+    [Buffer.from("bitmap"), distributor.toBuffer()],
     program.programId,
   );
 
   const txSig = await program.methods
-    .claim(amountBn, proof)
+    .claim(index, amountBn, proof)
     .accountsPartial({
       claimant: claimant.publicKey,
       distributor,
       mint: distributorAccount.mint,
       vault: distributorAccount.vault,
       claimantTokenAccount,
-      claimReceipt,
-      systemProgram: anchor.web3.SystemProgram.programId,
+      claimBitmap,
       tokenProgram: TOKEN_PROGRAM_ID,
     })
     .rpc();
@@ -134,7 +139,8 @@ async function main() {
         mint: distributorAccount.mint.toBase58(),
         vault: distributorAccount.vault.toBase58(),
         claimantTokenAccount: claimantTokenAccount.toBase58(),
-        claimReceipt: claimReceipt.toBase58(),
+        claimBitmap: claimBitmap.toBase58(),
+        claimIndex: index,
         amount: amountBn.toString(),
         proofLen: proof.length,
       },
@@ -147,7 +153,7 @@ async function main() {
 main().catch((err) => {
   console.error(err instanceof Error ? err.message : err);
   console.error(
-    `\nUsage:\n  npm run claim -- --program-id <PROGRAM_ID> --distributor <DISTRIBUTOR_PDA> --proof-file <PROOF_JSON> [--claimant-token-account <TOKEN_ACCOUNT> | --create-token-account]\n`,
+    `\nUsage:\n  npm run claim -- --program-id <PROGRAM_ID> --distributor <DISTRIBUTOR_PDA> --proof-file <PROOF_JSON> [--index <u32>] [--claimant-token-account <TOKEN_ACCOUNT> | --create-token-account]\n`,
   );
   process.exit(1);
 });

@@ -7,8 +7,8 @@ const ENTRIES: AirdropEntry[] = [
   { address: "AXruuuQaXDZQd7t4pJfFTp1zDpYiDg6QMCBfk9UTHQoN", amount: 300n },
 ];
 
-function applyProof(address: string, amount: bigint, proof: Buffer[]): Buffer {
-  let node = hashLeaf(address, amount);
+function applyProof(index: number, address: string, amount: bigint, proof: Buffer[]): Buffer {
+  let node = hashLeaf(index, address, amount);
   for (const sibling of proof) {
     node = hashPair(node, sibling);
   }
@@ -17,17 +17,17 @@ function applyProof(address: string, amount: bigint, proof: Buffer[]): Buffer {
 
 test("getRoot returns deterministic root for known airdrop list", () => {
   const root = getRoot(ENTRIES);
-  expect(toHex(root)).toBe("0xcbc0f7eb58e8990322859e9c92d3bd62deec4dbc328cc8fc1635f3bd1a7892e4");
+  expect(toHex(root)).toBe("0xf2c573e20c4257484e00b8bf829aba233cf1251d4f097549b2a9eab97eb63f3e");
 });
 
 test("getProof reconstructs the same root", () => {
   const root = getRoot(ENTRIES);
 
-  for (const entry of ENTRIES) {
+  ENTRIES.forEach((entry, index) => {
     const { amount, proof } = getProof(ENTRIES, entry.address);
-    const recomputed = applyProof(entry.address, amount, proof);
+    const recomputed = applyProof(index, entry.address, amount, proof);
     expect(recomputed.equals(root)).toBeTrue();
-  }
+  });
 });
 
 test("getProof throws for address not in list", () => {

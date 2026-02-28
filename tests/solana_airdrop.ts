@@ -4,7 +4,7 @@ import { TOKEN_PROGRAM_ID, createAccount, createMint, getAccount, mintTo } from 
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
 import { MerkeAirdrop } from "../target/types/merke_airdrop";
-import { AirdropEntry, getProof, getRoot } from "../merkle-tree-generator/src/merkle";
+import { AirdropEntry, getProof, getRoot } from "../utils/merkle-tree-generator/src/merkle";
 
 type TestUser = {
   keypair: Keypair;

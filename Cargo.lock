@@ -1068,7 +1068,8 @@ dependencies = [
 name = "primitivo"
 version = "0.1.0"
 dependencies = [
- "solana-program",
+ "anchor-lang",
+ "anchor-spl",
 ]
 
 [[package]]

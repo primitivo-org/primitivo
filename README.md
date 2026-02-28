@@ -1,25 +1,49 @@
-# Solana Airdrop (Anchor + Merkle)
+# primitivo
 
-Merkle airdrop program where each leaf is `(address, amount)`.
+Anchor workspace for Solana primitives, currently including a Merkle SPL-token airdrop program and shared Rust crate modules.
 
-## Deploy
+## Workspace Layout
+
+- `programs/merke-airdrop`: on-chain Anchor program entrypoints/accounts.
+- `crates/primitivo`: reusable Rust module crate (state, handlers, merkle/bitmap logic).
+- `utils/merkle-tree-generator`: Bun TypeScript tool for `root` and `proof` commands.
+- `scripts`: TypeScript scripts for distributor initialization and claims.
+
+## Program ID Env Overrides
+
+`crates/primitivo/build.rs` generates program-id files from env vars.
+
+Supported env vars:
+
+- `PRIMITIVO_MERKLE_AIRDROP_ID` (default: `Dpjs4ihZc6T9Y6mBfgDcmRavoFysLRDpdW5fezbxGZ33`)
+- `PRIMITIVO_VESTING_ID` (default: `11111111111111111111111111111111`)
+
+You can override IDs per build:
 
 ```bash
-# build
+PRIMITIVO_MERKLE_AIRDROP_ID=<YOUR_AIRDROP_PROGRAM_ID> \
+PRIMITIVO_VESTING_ID=<YOUR_VESTING_PROGRAM_ID> \
 anchor build
-
-# start local validator (separate terminal)
-solana-test-validator --reset
-
-# deploy
-ANCHOR_PROVIDER_URL=http://127.0.0.1:8899 \
-ANCHOR_WALLET=$HOME/.config/solana/id.json \
-anchor deploy
 ```
 
-## Generate Merkle Data
+Local defaults are set in `.cargo/config.toml` for this repo.
 
-Airdrop file format (`address amount` per line):
+## Build / Test
+
+```bash
+anchor build
+anchor test
+```
+
+## Merkle Data Generator (Bun)
+
+Airdrop file format is one line per user:
+
+```txt
+<address> <amount>
+```
+
+Example:
 
 ```txt
 BNGRxgaJ9TBB2RScFDhZCxvHoXqtpJnG6BMTZjfeZETj 100
@@ -27,70 +51,46 @@ BNGRxgaJ9TBB2RScFDhZCxvHoXqtpJnG6BMTZjfeZETj 100
 AXruuuQaXDZQd7t4pJfFTp1zDpYiDg6QMCBfk9UTHQoN 300
 ```
 
+Commands:
+
 ```bash
-cd merkle-tree-generator
+cd utils/merkle-tree-generator
 bun install
 bun run root --input ./addresses.txt
 bun run proof --input ./addresses.txt --address <WALLET>
 ```
 
-`proof` output includes `index`, `amount`, and `proof`. On claim, pass all three.
+`proof` output includes `index`, `amount`, and `proof` for on-chain claim.
 
-## Initialize Distributor Script
+## Initialize Distributor
 
-After deploy, initialize distributor using the generated root and funding.
-
-### Option A: create a new SPL mint (optional)
+With mint creation:
 
 ```bash
-npm run init:distributor -- \
+anchor run init -- \
   --program-id <PROGRAM_ID> \
-  --airdrop-file ./merkle-tree-generator/addresses.txt \
+  --airdrop-file ./utils/merkle-tree-generator/addresses.txt \
   --id 1 \
   --create-mint \
   --decimals 6
 ```
 
-### Option B: use existing mint + source token account
+With existing mint and source token account:
 
 ```bash
-npm run init:distributor -- \
+anchor run init -- \
   --program-id <PROGRAM_ID> \
-  --airdrop-file ./merkle-tree-generator/addresses.txt \
+  --airdrop-file ./utils/merkle-tree-generator/addresses.txt \
   --id 1 \
   --mint <MINT_PUBKEY> \
   --source-token-account <SOURCE_TOKEN_ACCOUNT>
 ```
 
-Optional flag:
+Optional:
 
-- `--funding-amount <u64>` to override default funding (default is sum of all amounts in the list).
+- `--funding-amount <u64>` (default is sum of list amounts)
 
-The script prints distributor PDA, vault PDA, mint, tx signature, and merkle root.
-
-## Claim Script
-
-Use proof output from `bun run proof ...`:
-
-```bash
-npm run claim -- \
-  --program-id <PROGRAM_ID> \
-  --distributor <DISTRIBUTOR_PDA> \
-  --proof-file ./proof.json \
-  --create-token-account
-```
-
-Or provide an existing token account:
-
-```bash
-npm run claim -- \
-  --program-id <PROGRAM_ID> \
-  --distributor <DISTRIBUTOR_PDA> \
-  --proof-file ./proof.json \
-  --claimant-token-account <TOKEN_ACCOUNT>
-```
-
-With Anchor alias:
+## Claim
 
 ```bash
 anchor run claim -- \
@@ -100,4 +100,14 @@ anchor run claim -- \
   --create-token-account
 ```
 
-Claim status is tracked on-chain in a bitmap PDA (`[\"bitmap\", distributor]`) using the merkle `index`.
+Or provide an existing token account:
+
+```bash
+anchor run claim -- \
+  --program-id <PROGRAM_ID> \
+  --distributor <DISTRIBUTOR_PDA> \
+  --proof-file ./proof.json \
+  --claimant-token-account <TOKEN_ACCOUNT>
+```
+
+Claim status uses on-chain bitmap PDA: `['bitmap', distributor]`, keyed by Merkle `index`.

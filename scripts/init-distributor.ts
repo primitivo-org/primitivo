@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { PublicKey } from "@solana/web3.js";
 import { createAccount, createMint, mintTo, TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { getRoot, loadEntries } from "../merkle-tree-generator/src/merkle";
+import { getRoot, loadEntries } from "../utils/merkle-tree-generator/src/merkle";
 
 function getArg(flag: string): string | undefined {
   const idx = process.argv.indexOf(flag);

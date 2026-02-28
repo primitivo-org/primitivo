@@ -7,3 +7,4 @@ test-ledger
 .yarn
 addresses.txt
 proof.json
+.cargo/config.toml

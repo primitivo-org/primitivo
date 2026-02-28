@@ -16,8 +16,8 @@ Anchor workspace for Solana primitives, currently including a Merkle SPL-token a
 
 Supported env vars:
 
-- `PRIMITIVO_MERKLE_AIRDROP_ID` (default: `Dpjs4ihZc6T9Y6mBfgDcmRavoFysLRDpdW5fezbxGZ33`)
-- `PRIMITIVO_VESTING_ID` (default: `8bSvkfYPuNqNRSSZzPD62H1dDPrACYPLLQitkYWVs75q`)
+- `PRIMITIVO_MERKLE_AIRDROP_ID`
+- `PRIMITIVO_VESTING_ID`
 
 You can override IDs per build:
 

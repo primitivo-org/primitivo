@@ -5,6 +5,7 @@ Anchor workspace for Solana primitives, currently including a Merkle SPL-token a
 ## Workspace Layout
 
 - `programs/merke-airdrop`: on-chain Anchor program entrypoints/accounts.
+- `programs/vesting`: on-chain vesting program (cliff + linear release + revoke).
 - `crates/primitivo`: reusable Rust module crate (state, handlers, merkle/bitmap logic).
 - `utils/merkle-tree-generator`: Bun TypeScript tool for `root` and `proof` commands.
 - `scripts`: TypeScript scripts for distributor initialization and claims.
@@ -16,7 +17,7 @@ Anchor workspace for Solana primitives, currently including a Merkle SPL-token a
 Supported env vars:
 
 - `PRIMITIVO_MERKLE_AIRDROP_ID` (default: `Dpjs4ihZc6T9Y6mBfgDcmRavoFysLRDpdW5fezbxGZ33`)
-- `PRIMITIVO_VESTING_ID` (default: `11111111111111111111111111111111`)
+- `PRIMITIVO_VESTING_ID` (default: `8bSvkfYPuNqNRSSZzPD62H1dDPrACYPLLQitkYWVs75q`)
 
 You can override IDs per build:
 
@@ -34,6 +35,23 @@ Local defaults are set in `.cargo/config.toml` for this repo.
 anchor build
 anchor test
 ```
+
+## Vesting Program
+
+`vesting` supports:
+
+- configurable SPL mint per vesting config
+- per-user vesting schedule
+- cliff timestamp
+- linear release between `start_ts` and `end_ts`
+- authority revoke of unvested amount
+
+Main instructions:
+
+- `initialize_vesting_config(id)`
+- `create_schedule(total_amount, start_ts, cliff_ts, end_ts)`
+- `claim()`
+- `revoke()`
 
 ## Merkle Data Generator (Bun)
 

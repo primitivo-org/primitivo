@@ -14,8 +14,8 @@ const PROGRAM_ID_SPECS: &[ProgramIdSpec] = &[
     },
     ProgramIdSpec {
         env_key: "PRIMITIVO_VESTING_ID",
-        out_file: "primitivo_vesting_program_id.rs",
-        default_id: "11111111111111111111111111111111",
+        out_file: "vesting_program_id.rs",
+        default_id: "8bSvkfYPuNqNRSSZzPD62H1dDPrACYPLLQitkYWVs75q",
     },
 ];
 

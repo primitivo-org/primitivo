@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::hash::hashv;
+use crate::Ownership;
 
 include!(concat!(
     env!("OUT_DIR"),
@@ -9,7 +10,8 @@ include!(concat!(
 #[account]
 #[derive(InitSpace)]
 pub struct Distributor {
-    pub authority: Pubkey,
+    pub ownership: Ownership,
+    pub seed_authority: Pubkey,
     pub mint: Pubkey,
     pub vault: Pubkey,
     pub merkle_root: [u8; 32],
@@ -90,7 +92,8 @@ pub fn initialize_distributor_handler(
 ) -> Result<()> {
     require!(max_claims > 0, AirdropError::InvalidMaxClaims);
 
-    distributor.authority = authority;
+    distributor.ownership = Ownership::new(authority);
+    distributor.seed_authority = authority;
     distributor.mint = mint;
     distributor.vault = vault;
     distributor.merkle_root = merkle_root;

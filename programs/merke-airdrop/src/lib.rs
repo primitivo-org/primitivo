@@ -9,6 +9,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 use primitivo::{
     claim_handler, initialize_distributor_handler, AirdropError, ClaimBitmap, Distributor,
+    OwnershipError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/merke_airdrop_program_id.rs"));
@@ -68,7 +69,7 @@ pub mod merke_airdrop {
         let id_bytes = distributor.id.to_le_bytes();
         let signer_seeds: &[&[u8]] = &[
             b"distributor",
-            distributor.authority.as_ref(),
+            distributor.seed_authority.as_ref(),
             distributor.mint.as_ref(),
             &id_bytes,
             &[distributor.bump],
@@ -87,6 +88,38 @@ pub mod merke_airdrop {
         );
         token::transfer(cpi_ctx, amount)?;
 
+        Ok(())
+    }
+
+    pub fn propose_ownership_transfer(
+        ctx: Context<ProposeOwnershipTransfer>,
+        new_owner: Pubkey,
+        accept_window_secs: i64,
+    ) -> Result<()> {
+        let now_ts = Clock::get()?.unix_timestamp;
+        ctx.accounts.distributor.ownership.propose_transfer(
+            ctx.accounts.owner.key(),
+            new_owner,
+            now_ts,
+            accept_window_secs,
+        )?;
+        Ok(())
+    }
+
+    pub fn accept_ownership_transfer(ctx: Context<AcceptOwnershipTransfer>) -> Result<()> {
+        let now_ts = Clock::get()?.unix_timestamp;
+        ctx.accounts
+            .distributor
+            .ownership
+            .accept_transfer(ctx.accounts.pending_owner.key(), now_ts)?;
+        Ok(())
+    }
+
+    pub fn cancel_ownership_transfer(ctx: Context<CancelOwnershipTransfer>) -> Result<()> {
+        ctx.accounts
+            .distributor
+            .ownership
+            .cancel_transfer(ctx.accounts.owner.key())?;
         Ok(())
     }
 }
@@ -176,4 +209,40 @@ pub struct Claim<'info> {
     pub claim_bitmap: Account<'info, ClaimBitmap>,
 
     pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
+pub struct ProposeOwnershipTransfer<'info> {
+    #[account(mut)]
+    pub owner: Signer<'info>,
+
+    #[account(
+        mut,
+        constraint = distributor.ownership.owner == owner.key() @ OwnershipError::NotOwner,
+    )]
+    pub distributor: Account<'info, Distributor>,
+}
+
+#[derive(Accounts)]
+pub struct AcceptOwnershipTransfer<'info> {
+    #[account(mut)]
+    pub pending_owner: Signer<'info>,
+
+    #[account(
+        mut,
+        constraint = distributor.ownership.pending_owner == pending_owner.key() @ OwnershipError::InvalidPendingOwner,
+    )]
+    pub distributor: Account<'info, Distributor>,
+}
+
+#[derive(Accounts)]
+pub struct CancelOwnershipTransfer<'info> {
+    #[account(mut)]
+    pub owner: Signer<'info>,
+
+    #[account(
+        mut,
+        constraint = distributor.ownership.owner == owner.key() @ OwnershipError::NotOwner,
+    )]
+    pub distributor: Account<'info, Distributor>,
 }

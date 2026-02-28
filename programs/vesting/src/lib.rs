@@ -5,7 +5,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 use primitivo::{
     claimable_amount, increase_released_amount, unvested_amount_on_revoke, validate_vesting_params,
-    VestingError,
+    Ownership, OwnershipError, VestingError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/vesting_program_id.rs"));
@@ -16,7 +16,8 @@ pub mod vesting {
 
     pub fn initialize_vesting_config(ctx: Context<InitializeVestingConfig>, id: u64) -> Result<()> {
         let cfg = &mut ctx.accounts.config;
-        cfg.authority = ctx.accounts.authority.key();
+        cfg.ownership = Ownership::new(ctx.accounts.authority.key());
+        cfg.seed_authority = ctx.accounts.authority.key();
         cfg.mint = ctx.accounts.mint.key();
         cfg.vault = ctx.accounts.vault.key();
         cfg.id = id;
@@ -32,6 +33,10 @@ pub mod vesting {
         cliff_ts: i64,
         end_ts: i64,
     ) -> Result<()> {
+        ctx.accounts
+            .config
+            .ownership
+            .require_owner(ctx.accounts.authority.key())?;
         validate_vesting_params(total_amount, start_ts, cliff_ts, end_ts)?;
 
         let schedule = &mut ctx.accounts.schedule;
@@ -80,7 +85,7 @@ pub mod vesting {
         let id_bytes = cfg.id.to_le_bytes();
         let signer_seeds: &[&[u8]] = &[
             b"vesting-config",
-            cfg.authority.as_ref(),
+            cfg.seed_authority.as_ref(),
             cfg.mint.as_ref(),
             &id_bytes,
             &[cfg.bump],
@@ -103,6 +108,10 @@ pub mod vesting {
     }
 
     pub fn revoke(ctx: Context<RevokeSchedule>) -> Result<()> {
+        ctx.accounts
+            .config
+            .ownership
+            .require_owner(ctx.accounts.authority.key())?;
         let now_ts = Clock::get()?.unix_timestamp;
         let schedule = &mut ctx.accounts.schedule;
 
@@ -123,7 +132,7 @@ pub mod vesting {
             let id_bytes = cfg.id.to_le_bytes();
             let signer_seeds: &[&[u8]] = &[
                 b"vesting-config",
-                cfg.authority.as_ref(),
+                cfg.seed_authority.as_ref(),
                 cfg.mint.as_ref(),
                 &id_bytes,
                 &[cfg.bump],
@@ -145,12 +154,45 @@ pub mod vesting {
 
         Ok(())
     }
+
+    pub fn propose_ownership_transfer(
+        ctx: Context<ProposeVestingOwnershipTransfer>,
+        new_owner: Pubkey,
+        accept_window_secs: i64,
+    ) -> Result<()> {
+        let now_ts = Clock::get()?.unix_timestamp;
+        ctx.accounts.config.ownership.propose_transfer(
+            ctx.accounts.owner.key(),
+            new_owner,
+            now_ts,
+            accept_window_secs,
+        )?;
+        Ok(())
+    }
+
+    pub fn accept_ownership_transfer(ctx: Context<AcceptVestingOwnershipTransfer>) -> Result<()> {
+        let now_ts = Clock::get()?.unix_timestamp;
+        ctx.accounts
+            .config
+            .ownership
+            .accept_transfer(ctx.accounts.pending_owner.key(), now_ts)?;
+        Ok(())
+    }
+
+    pub fn cancel_ownership_transfer(ctx: Context<CancelVestingOwnershipTransfer>) -> Result<()> {
+        ctx.accounts
+            .config
+            .ownership
+            .cancel_transfer(ctx.accounts.owner.key())?;
+        Ok(())
+    }
 }
 
 #[account]
 #[derive(InitSpace)]
 pub struct VestingConfig {
-    pub authority: Pubkey,
+    pub ownership: Ownership,
+    pub seed_authority: Pubkey,
     pub mint: Pubkey,
     pub vault: Pubkey,
     pub id: u64,
@@ -212,9 +254,9 @@ pub struct CreateSchedule<'info> {
 
     #[account(
         mut,
-        has_one = authority,
         has_one = mint,
         has_one = vault,
+        constraint = config.ownership.owner == authority.key() @ VestingError::InvalidSchedule,
     )]
     pub config: Account<'info, VestingConfig>,
 
@@ -284,9 +326,9 @@ pub struct RevokeSchedule<'info> {
 
     #[account(
         mut,
-        has_one = authority,
         has_one = mint,
         has_one = vault,
+        constraint = config.ownership.owner == authority.key() @ VestingError::InvalidSchedule,
     )]
     pub config: Account<'info, VestingConfig>,
 
@@ -309,4 +351,40 @@ pub struct RevokeSchedule<'info> {
     pub vault: Account<'info, TokenAccount>,
 
     pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
+pub struct ProposeVestingOwnershipTransfer<'info> {
+    #[account(mut)]
+    pub owner: Signer<'info>,
+
+    #[account(
+        mut,
+        constraint = config.ownership.owner == owner.key() @ OwnershipError::NotOwner,
+    )]
+    pub config: Account<'info, VestingConfig>,
+}
+
+#[derive(Accounts)]
+pub struct AcceptVestingOwnershipTransfer<'info> {
+    #[account(mut)]
+    pub pending_owner: Signer<'info>,
+
+    #[account(
+        mut,
+        constraint = config.ownership.pending_owner == pending_owner.key() @ OwnershipError::InvalidPendingOwner,
+    )]
+    pub config: Account<'info, VestingConfig>,
+}
+
+#[derive(Accounts)]
+pub struct CancelVestingOwnershipTransfer<'info> {
+    #[account(mut)]
+    pub owner: Signer<'info>,
+
+    #[account(
+        mut,
+        constraint = config.ownership.owner == owner.key() @ OwnershipError::NotOwner,
+    )]
+    pub config: Account<'info, VestingConfig>,
 }

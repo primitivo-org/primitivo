@@ -29,6 +29,33 @@ anchor build
 
 Local defaults are set in `.cargo/config.toml` for this repo.
 
+## Ownership Helper
+
+`crates/primitivo/src/ownership.rs` provides reusable ownership state:
+
+- `owner`
+- `pending_owner`
+- `pending_expires_at`
+
+It is now embedded in on-chain state:
+
+- `Distributor.ownership` in `merke_airdrop`
+- `VestingConfig.ownership` in `vesting`
+
+Current usage in both programs enforces authority via `ownership.owner`.
+
+Helper methods:
+
+- `require_owner(signer)`
+- `propose_transfer(signer, new_owner, now_ts, accept_window_secs)`
+- `accept_transfer(signer, now_ts)`
+- `cancel_transfer(signer)`
+
+Program instructions using this helper:
+
+- `merke_airdrop`: `propose_ownership_transfer`, `accept_ownership_transfer`, `cancel_ownership_transfer`
+- `vesting`: `propose_ownership_transfer`, `accept_ownership_transfer`, `cancel_ownership_transfer`
+
 ## Build / Test
 
 ```bash

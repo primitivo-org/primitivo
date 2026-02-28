@@ -89,15 +89,22 @@ pub mod merke_airdrop {
 
         Ok(())
     }
-    primitivo::generate_ownership_transfer_handlers!(
-        propose_fn = propose_ownership_transfer,
-        accept_fn = accept_ownership_transfer,
-        cancel_fn = cancel_ownership_transfer,
-        propose_ctx = ProposeOwnershipTransfer,
-        accept_ctx = AcceptOwnershipTransfer,
-        cancel_ctx = CancelOwnershipTransfer,
-        state_account = distributor
-    );
+
+    pub fn propose_ownership_transfer(
+        ctx: Context<ProposeOwnershipTransfer>,
+        new_owner: Pubkey,
+        accept_window_secs: i64,
+    ) -> Result<()> {
+        propose_distributor_ownership_transfer_impl(ctx, new_owner, accept_window_secs)
+    }
+
+    pub fn accept_ownership_transfer(ctx: Context<AcceptOwnershipTransfer>) -> Result<()> {
+        accept_distributor_ownership_transfer_impl(ctx)
+    }
+
+    pub fn cancel_ownership_transfer(ctx: Context<CancelOwnershipTransfer>) -> Result<()> {
+        cancel_distributor_ownership_transfer_impl(ctx)
+    }
 }
 
 #[derive(Accounts)]
@@ -193,4 +200,14 @@ primitivo::generate_ownership_transfer_accounts!(
     propose_ctx = ProposeOwnershipTransfer,
     accept_ctx = AcceptOwnershipTransfer,
     cancel_ctx = CancelOwnershipTransfer
+);
+
+primitivo::generate_ownership_transfer_handlers!(
+    propose_fn = propose_distributor_ownership_transfer_impl,
+    accept_fn = accept_distributor_ownership_transfer_impl,
+    cancel_fn = cancel_distributor_ownership_transfer_impl,
+    propose_ctx = ProposeOwnershipTransfer,
+    accept_ctx = AcceptOwnershipTransfer,
+    cancel_ctx = CancelOwnershipTransfer,
+    state_account = distributor
 );

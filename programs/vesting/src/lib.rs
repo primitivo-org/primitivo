@@ -155,15 +155,21 @@ pub mod vesting {
         Ok(())
     }
 
-    primitivo::generate_ownership_transfer_handlers!(
-        propose_fn = propose_ownership_transfer,
-        accept_fn = accept_ownership_transfer,
-        cancel_fn = cancel_ownership_transfer,
-        propose_ctx = ProposeVestingOwnershipTransfer,
-        accept_ctx = AcceptVestingOwnershipTransfer,
-        cancel_ctx = CancelVestingOwnershipTransfer,
-        state_account = config
-    );
+    pub fn propose_ownership_transfer(
+        ctx: Context<ProposeVestingOwnershipTransfer>,
+        new_owner: Pubkey,
+        accept_window_secs: i64,
+    ) -> Result<()> {
+        propose_vesting_ownership_transfer_impl(ctx, new_owner, accept_window_secs)
+    }
+
+    pub fn accept_ownership_transfer(ctx: Context<AcceptVestingOwnershipTransfer>) -> Result<()> {
+        accept_vesting_ownership_transfer_impl(ctx)
+    }
+
+    pub fn cancel_ownership_transfer(ctx: Context<CancelVestingOwnershipTransfer>) -> Result<()> {
+        cancel_vesting_ownership_transfer_impl(ctx)
+    }
 }
 
 #[account]
@@ -337,4 +343,14 @@ primitivo::generate_ownership_transfer_accounts!(
     propose_ctx = ProposeVestingOwnershipTransfer,
     accept_ctx = AcceptVestingOwnershipTransfer,
     cancel_ctx = CancelVestingOwnershipTransfer
+);
+
+primitivo::generate_ownership_transfer_handlers!(
+    propose_fn = propose_vesting_ownership_transfer_impl,
+    accept_fn = accept_vesting_ownership_transfer_impl,
+    cancel_fn = cancel_vesting_ownership_transfer_impl,
+    propose_ctx = ProposeVestingOwnershipTransfer,
+    accept_ctx = AcceptVestingOwnershipTransfer,
+    cancel_ctx = CancelVestingOwnershipTransfer,
+    state_account = config
 );

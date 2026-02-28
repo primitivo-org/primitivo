@@ -11,7 +11,7 @@ use primitivo::{
     claim_handler, initialize_distributor_handler, AirdropError, ClaimBitmap, Distributor,
 };
 
-declare_id!("Dpjs4ihZc6T9Y6mBfgDcmRavoFysLRDpdW5fezbxGZ33");
+include!(concat!(env!("OUT_DIR"), "/merke_airdrop_program_id.rs"));
 
 #[program]
 pub mod merke_airdrop {

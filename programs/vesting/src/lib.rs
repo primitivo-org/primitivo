@@ -5,7 +5,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 use primitivo::{
     claimable_amount, increase_released_amount, unvested_amount_on_revoke, validate_vesting_params,
-    Ownership, OwnershipError, VestingError,
+    Ownership, VestingError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/vesting_program_id.rs"));
@@ -155,37 +155,15 @@ pub mod vesting {
         Ok(())
     }
 
-    pub fn propose_ownership_transfer(
-        ctx: Context<ProposeVestingOwnershipTransfer>,
-        new_owner: Pubkey,
-        accept_window_secs: i64,
-    ) -> Result<()> {
-        let now_ts = Clock::get()?.unix_timestamp;
-        ctx.accounts.config.ownership.propose_transfer(
-            ctx.accounts.owner.key(),
-            new_owner,
-            now_ts,
-            accept_window_secs,
-        )?;
-        Ok(())
-    }
-
-    pub fn accept_ownership_transfer(ctx: Context<AcceptVestingOwnershipTransfer>) -> Result<()> {
-        let now_ts = Clock::get()?.unix_timestamp;
-        ctx.accounts
-            .config
-            .ownership
-            .accept_transfer(ctx.accounts.pending_owner.key(), now_ts)?;
-        Ok(())
-    }
-
-    pub fn cancel_ownership_transfer(ctx: Context<CancelVestingOwnershipTransfer>) -> Result<()> {
-        ctx.accounts
-            .config
-            .ownership
-            .cancel_transfer(ctx.accounts.owner.key())?;
-        Ok(())
-    }
+    primitivo::generate_ownership_transfer_handlers!(
+        propose_fn = propose_ownership_transfer,
+        accept_fn = accept_ownership_transfer,
+        cancel_fn = cancel_ownership_transfer,
+        propose_ctx = ProposeVestingOwnershipTransfer,
+        accept_ctx = AcceptVestingOwnershipTransfer,
+        cancel_ctx = CancelVestingOwnershipTransfer,
+        state_account = config
+    );
 }
 
 #[account]
@@ -353,38 +331,10 @@ pub struct RevokeSchedule<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-#[derive(Accounts)]
-pub struct ProposeVestingOwnershipTransfer<'info> {
-    #[account(mut)]
-    pub owner: Signer<'info>,
-
-    #[account(
-        mut,
-        constraint = config.ownership.owner == owner.key() @ OwnershipError::NotOwner,
-    )]
-    pub config: Account<'info, VestingConfig>,
-}
-
-#[derive(Accounts)]
-pub struct AcceptVestingOwnershipTransfer<'info> {
-    #[account(mut)]
-    pub pending_owner: Signer<'info>,
-
-    #[account(
-        mut,
-        constraint = config.ownership.pending_owner == pending_owner.key() @ OwnershipError::InvalidPendingOwner,
-    )]
-    pub config: Account<'info, VestingConfig>,
-}
-
-#[derive(Accounts)]
-pub struct CancelVestingOwnershipTransfer<'info> {
-    #[account(mut)]
-    pub owner: Signer<'info>,
-
-    #[account(
-        mut,
-        constraint = config.ownership.owner == owner.key() @ OwnershipError::NotOwner,
-    )]
-    pub config: Account<'info, VestingConfig>,
-}
+primitivo::generate_ownership_transfer_accounts!(
+    state_ty = VestingConfig,
+    state_account = config,
+    propose_ctx = ProposeVestingOwnershipTransfer,
+    accept_ctx = AcceptVestingOwnershipTransfer,
+    cancel_ctx = CancelVestingOwnershipTransfer
+);

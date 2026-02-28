@@ -51,6 +51,53 @@ Helper methods:
 - `accept_transfer(signer, now_ts)`
 - `cancel_transfer(signer)`
 
+Ownership macros for programs:
+
+- `generate_ownership_transfer_accounts!`
+- `generate_ownership_transfer_handlers!`
+
+Detailed usage:
+
+1. Ensure your state account has an `ownership: Ownership` field.
+2. Generate account context structs near the bottom of your program file:
+
+```rust
+primitivo::generate_ownership_transfer_accounts!(
+    state_ty = Distributor,
+    state_account = distributor,
+    propose_ctx = ProposeOwnershipTransfer,
+    accept_ctx = AcceptOwnershipTransfer,
+    cancel_ctx = CancelOwnershipTransfer
+);
+```
+
+3. Generate instruction handlers inside `#[program] mod ...`:
+
+```rust
+primitivo::generate_ownership_transfer_handlers!(
+    propose_fn = propose_ownership_transfer,
+    accept_fn = accept_ownership_transfer,
+    cancel_fn = cancel_ownership_transfer,
+    propose_ctx = ProposeOwnershipTransfer,
+    accept_ctx = AcceptOwnershipTransfer,
+    cancel_ctx = CancelOwnershipTransfer,
+    state_account = distributor
+);
+```
+
+Macro arguments:
+
+- `state_ty`: Anchor account struct type containing `ownership`.
+- `state_account`: account field name in generated contexts.
+- `propose_ctx` / `accept_ctx` / `cancel_ctx`: generated `Accounts` struct names.
+- `propose_fn` / `accept_fn` / `cancel_fn`: generated instruction function names.
+
+Generated behavior:
+
+- `propose`: current owner sets `pending_owner` + expiry window.
+- `accept`: pending owner accepts before expiry and becomes `owner`.
+- `cancel`: current owner clears pending transfer.
+
 Program instructions using this helper:
 
 - `merke_airdrop`: `propose_ownership_transfer`, `accept_ownership_transfer`, `cancel_ownership_transfer`

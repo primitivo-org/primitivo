@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::hash::hashv;
+use solana_sha256_hasher::hashv;
 use crate::Ownership;
 
 include!(concat!(
@@ -149,10 +149,10 @@ pub fn hash_leaf(index: u32, recipient: &Pubkey, amount: u64) -> [u8; 32] {
     let index_bytes = index.to_le_bytes();
     let amount_bytes = amount.to_le_bytes();
     hashv(&[
-        b"merkle_airdrop",
-        &index_bytes,
+        b"merkle_airdrop".as_ref(),
+        index_bytes.as_ref(),
         recipient.as_ref(),
-        &amount_bytes,
+        amount_bytes.as_ref(),
     ])
     .to_bytes()
 }

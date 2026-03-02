@@ -1,6 +1,6 @@
 # primitivo
 
-Anchor workspace for Solana primitives, currently including a Merkle SPL-token airdrop program and shared Rust crate modules.
+Anchor workspace for Solana primitives
 
 ## Workspace Layout
 

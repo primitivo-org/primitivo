@@ -9,6 +9,7 @@ skip-lint = false
 [programs.localnet]
 merke_airdrop = "Dpjs4ihZc6T9Y6mBfgDcmRavoFysLRDpdW5fezbxGZ33"
 vesting = "8bSvkfYPuNqNRSSZzPD62H1dDPrACYPLLQitkYWVs75q"
+converter = "87ReJzgQU1KDbRWRtGC1DTtxUZ6dE3MkcEx2a37fFySr"
 
 [registry]
 url = "https://api.apr.dev"

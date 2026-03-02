@@ -6,6 +6,7 @@ Anchor workspace for Solana primitives, currently including a Merkle SPL-token a
 
 - `programs/merke-airdrop`: on-chain Anchor program entrypoints/accounts.
 - `programs/vesting`: on-chain vesting program (cliff + linear release + revoke).
+- `programs/converter`: on-chain SPL token converter with owner-managed exchange rate.
 - `crates/primitivo`: reusable Rust module crate (state, handlers, merkle/bitmap logic).
 - `utils/merkle-tree-generator`: Bun TypeScript tool for `root` and `proof` commands.
 - `scripts`: TypeScript scripts for distributor initialization and claims.
@@ -18,6 +19,7 @@ Supported env vars:
 
 - `PRIMITIVO_MERKLE_AIRDROP_ID`
 - `PRIMITIVO_VESTING_ID`
+- `PRIMITIVO_CONVERTER_ID`
 
 You can override IDs per build:
 
@@ -126,6 +128,20 @@ Main instructions:
 - `create_schedule(total_amount, start_ts, cliff_ts, end_ts)`
 - `claim()`
 - `revoke()`
+
+## Converter Program
+
+`converter` supports:
+
+- configurable `from_mint` / `to_mint`
+- owner-only exchange rate updates (`rate_numerator` / `rate_denominator`)
+- token swap with slippage guard via `minimum_received`
+
+Main instructions:
+
+- `initialize_converter(id, rate_numerator, rate_denominator)`
+- `update_rate(rate_numerator, rate_denominator)` (owner only)
+- `swap(amount_in, minimum_received)`
 
 ## Merkle Data Generator (Bun)
 

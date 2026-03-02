@@ -17,6 +17,11 @@ const PROGRAM_ID_SPECS: &[ProgramIdSpec] = &[
         out_file: "vesting_program_id.rs",
         default_id: "8bSvkfYPuNqNRSSZzPD62H1dDPrACYPLLQitkYWVs75q",
     },
+    ProgramIdSpec {
+        env_key: "PRIMITIVO_CONVERTER_ID",
+        out_file: "converter_program_id.rs",
+        default_id: "87ReJzgQU1KDbRWRtGC1DTtxUZ6dE3MkcEx2a37fFySr",
+    },
 ];
 
 fn main() {

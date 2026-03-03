@@ -3,17 +3,22 @@
 
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer};
-use primitivo::{
-    quote_deposit_shares, quote_redeem_underlying, Ownership, VaultError,
+use primitivo_macro::{
+    Ownership,
 };
+use vault_crate::{quote_deposit_shares, quote_redeem_underlying, VaultConfig, VaultError};
 
-include!(concat!(env!("OUT_DIR"), "/vault_program_id.rs"));
+include!(concat!(env!("OUT_DIR"), "/primitivo_vault_program_id.rs"));
 
 #[program]
 pub mod vault {
     use super::*;
 
-    pub fn initialize_vault(ctx: Context<InitializeVault>, id: u64, derivative_decimals: u8) -> Result<()> {
+    pub fn initialize_vault(
+        ctx: Context<InitializeVault>,
+        id: u64,
+        derivative_decimals: u8,
+    ) -> Result<()> {
         let cfg = &mut ctx.accounts.config;
         cfg.ownership = Ownership::new(ctx.accounts.authority.key());
         cfg.seed_authority = ctx.accounts.authority.key();
@@ -34,15 +39,19 @@ pub mod vault {
         let underlying_assets_before = ctx.accounts.underlying_vault.amount;
         let derivative_supply = ctx.accounts.derivative_mint.supply;
 
-        let derivative_out =
-            quote_deposit_shares(underlying_amount, underlying_assets_before, derivative_supply)?;
+        let derivative_out = quote_deposit_shares(
+            underlying_amount,
+            underlying_assets_before,
+            derivative_supply,
+        )?;
 
         let debit_accounts = Transfer {
             from: ctx.accounts.user_underlying_account.to_account_info(),
             to: ctx.accounts.underlying_vault.to_account_info(),
             authority: ctx.accounts.user.to_account_info(),
         };
-        let debit_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), debit_accounts);
+        let debit_ctx =
+            CpiContext::new(ctx.accounts.token_program.to_account_info(), debit_accounts);
         token::transfer(debit_ctx, underlying_amount)?;
 
         let id_bytes = cfg.id.to_le_bytes();
@@ -78,8 +87,11 @@ pub mod vault {
         let underlying_assets_before = ctx.accounts.underlying_vault.amount;
         let derivative_supply = ctx.accounts.derivative_mint.supply;
 
-        let underlying_out =
-            quote_redeem_underlying(derivative_amount, underlying_assets_before, derivative_supply)?;
+        let underlying_out = quote_redeem_underlying(
+            derivative_amount,
+            underlying_assets_before,
+            derivative_supply,
+        )?;
 
         let burn_accounts = Burn {
             mint: ctx.accounts.derivative_mint.to_account_info(),
@@ -132,22 +144,6 @@ pub mod vault {
     pub fn cancel_ownership_transfer(ctx: Context<CancelVaultOwnershipTransfer>) -> Result<()> {
         cancel_vault_ownership_transfer_impl(ctx)
     }
-}
-
-#[account]
-#[derive(InitSpace)]
-pub struct VaultConfig {
-    pub ownership: Ownership,
-    pub seed_authority: Pubkey,
-    pub underlying_mint: Pubkey,
-    pub derivative_mint: Pubkey,
-    pub underlying_vault: Pubkey,
-    pub id: u64,
-    pub underlying_assets: u64,
-    pub derivative_decimals: u8,
-    pub bump: u8,
-    pub underlying_vault_bump: u8,
-    pub derivative_mint_bump: u8,
 }
 
 #[derive(Accounts)]
@@ -272,7 +268,7 @@ pub struct Redeem<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-primitivo::generate_ownership_transfer_accounts!(
+primitivo_macro::generate_ownership_transfer_accounts!(
     state_ty = VaultConfig,
     state_account = config,
     propose_ctx = ProposeVaultOwnershipTransfer,
@@ -280,7 +276,7 @@ primitivo::generate_ownership_transfer_accounts!(
     cancel_ctx = CancelVaultOwnershipTransfer
 );
 
-primitivo::generate_ownership_transfer_handlers!(
+primitivo_macro::generate_ownership_transfer_handlers!(
     propose_fn = propose_vault_ownership_transfer_impl,
     accept_fn = accept_vault_ownership_transfer_impl,
     cancel_fn = cancel_vault_ownership_transfer_impl,

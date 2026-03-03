@@ -60,6 +60,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "airdrop-merkle"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "primitivo-macro",
+ "solana-sha256-hasher 3.1.0",
+]
+
+[[package]]
 name = "allocator-api2"
 version = "0.2.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -561,7 +571,16 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
- "primitivo",
+ "converter-crate",
+ "primitivo-macro",
+]
+
+[[package]]
+name = "converter-crate"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "primitivo-macro",
 ]
 
 [[package]]
@@ -943,9 +962,10 @@ dependencies = [
 name = "merke_airdrop"
 version = "0.1.0"
 dependencies = [
+ "airdrop-merkle",
  "anchor-lang",
  "anchor-spl",
- "primitivo",
+ "primitivo-macro",
 ]
 
 [[package]]
@@ -1093,12 +1113,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "primitivo"
+name = "primitivo-macro"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
- "anchor-spl",
- "solana-sha256-hasher 3.1.0",
 ]
 
 [[package]]
@@ -2918,7 +2936,16 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
- "primitivo",
+ "primitivo-macro",
+ "vault-crate",
+]
+
+[[package]]
+name = "vault-crate"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "primitivo-macro",
 ]
 
 [[package]]
@@ -2933,7 +2960,15 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
- "primitivo",
+ "primitivo-macro",
+ "vesting-crate",
+]
+
+[[package]]
+name = "vesting-crate"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
 ]
 
 [[package]]

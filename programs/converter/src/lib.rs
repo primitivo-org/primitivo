@@ -3,9 +3,11 @@
 
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
-use primitivo::{
-    assert_minimum_received, quote_amount_out, update_rate_handler, validate_rate, ConverterError,
+use primitivo_macro::{
     Ownership,
+};
+use converter_crate::{
+    assert_minimum_received, quote_amount_out, update_rate_handler, validate_rate, ConverterError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/converter_program_id.rs"));
@@ -232,7 +234,7 @@ pub struct Swap<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-primitivo::generate_ownership_transfer_accounts!(
+primitivo_macro::generate_ownership_transfer_accounts!(
     state_ty = ConverterConfig,
     state_account = config,
     propose_ctx = ProposeConverterOwnershipTransfer,
@@ -240,7 +242,7 @@ primitivo::generate_ownership_transfer_accounts!(
     cancel_ctx = CancelConverterOwnershipTransfer
 );
 
-primitivo::generate_ownership_transfer_handlers!(
+primitivo_macro::generate_ownership_transfer_handlers!(
     propose_fn = propose_converter_ownership_transfer_impl,
     accept_fn = accept_converter_ownership_transfer_impl,
     cancel_fn = cancel_converter_ownership_transfer_impl,

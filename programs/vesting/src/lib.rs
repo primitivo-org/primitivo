@@ -3,9 +3,12 @@
 
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
-use primitivo::{
+use primitivo_macro::{
+    Ownership, Pausable,
+};
+use vesting_crate::{
     claimable_amount, increase_released_amount, unvested_amount_on_revoke, validate_vesting_params,
-    Ownership, Pausable, VestingError,
+    VestingError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/vesting_program_id.rs"));
@@ -34,7 +37,7 @@ pub mod vesting {
         cliff_ts: i64,
         end_ts: i64,
     ) -> Result<()> {
-        primitivo::require_not_paused!(ctx, config);
+        primitivo_macro::require_not_paused!(ctx, config);
         ctx.accounts
             .config
             .ownership
@@ -64,7 +67,7 @@ pub mod vesting {
     }
 
     pub fn claim(ctx: Context<ClaimVested>) -> Result<()> {
-        primitivo::require_not_paused!(ctx, config);
+        primitivo_macro::require_not_paused!(ctx, config);
         let now_ts = Clock::get()?.unix_timestamp;
         let schedule = &mut ctx.accounts.schedule;
 
@@ -111,7 +114,7 @@ pub mod vesting {
     }
 
     pub fn revoke(ctx: Context<RevokeSchedule>) -> Result<()> {
-        primitivo::require_not_paused!(ctx, config);
+        primitivo_macro::require_not_paused!(ctx, config);
         ctx.accounts
             .config
             .ownership
@@ -350,7 +353,7 @@ pub struct RevokeSchedule<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-primitivo::generate_ownership_transfer_accounts!(
+primitivo_macro::generate_ownership_transfer_accounts!(
     state_ty = VestingConfig,
     state_account = config,
     propose_ctx = ProposeVestingOwnershipTransfer,
@@ -358,7 +361,7 @@ primitivo::generate_ownership_transfer_accounts!(
     cancel_ctx = CancelVestingOwnershipTransfer
 );
 
-primitivo::generate_ownership_transfer_handlers!(
+primitivo_macro::generate_ownership_transfer_handlers!(
     propose_fn = propose_vesting_ownership_transfer_impl,
     accept_fn = accept_vesting_ownership_transfer_impl,
     cancel_fn = cancel_vesting_ownership_transfer_impl,
@@ -368,14 +371,14 @@ primitivo::generate_ownership_transfer_handlers!(
     state_account = config
 );
 
-primitivo::generate_pausable_accounts!(
+primitivo_macro::generate_pausable_accounts!(
     state_ty = VestingConfig,
     state_account = config,
     pause_ctx = PauseVesting,
     unpause_ctx = UnpauseVesting
 );
 
-primitivo::generate_pausable_handlers!(
+primitivo_macro::generate_pausable_handlers!(
     pause_fn = pause_vesting_impl,
     unpause_fn = unpause_vesting_impl,
     pause_ctx = PauseVesting,

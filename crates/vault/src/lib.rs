@@ -1,4 +1,32 @@
 use anchor_lang::prelude::*;
+use primitivo_macro::Ownership;
+
+pub mod vault_program_id {
+    include!(concat!(env!("OUT_DIR"), "/primitivo_vault_program_id.rs"));
+}
+pub use vault_program_id::check_id;
+pub use vault_program_id::id;
+pub use vault_program_id::id_const;
+pub use vault_program_id::ID;
+pub use vault_program_id::ID_CONST;
+pub use vault_program_id::ID as VAULT_PROGRAM_ID;
+pub use vault_program_id::id as vault_program_id;
+
+#[account]
+#[derive(InitSpace)]
+pub struct VaultConfig {
+    pub ownership: Ownership,
+    pub seed_authority: Pubkey,
+    pub underlying_mint: Pubkey,
+    pub derivative_mint: Pubkey,
+    pub underlying_vault: Pubkey,
+    pub id: u64,
+    pub underlying_assets: u64,
+    pub derivative_decimals: u8,
+    pub bump: u8,
+    pub underlying_vault_bump: u8,
+    pub derivative_mint_bump: u8,
+}
 
 #[error_code]
 pub enum VaultError {

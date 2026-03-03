@@ -1,11 +1,17 @@
 use anchor_lang::prelude::*;
+use primitivo_macro::Ownership;
 use solana_sha256_hasher::hashv;
-use crate::Ownership;
 
-include!(concat!(
-    env!("OUT_DIR"),
-    "/primitivo_merkle_airdrop_program_id.rs"
-));
+pub mod airdrop_merkle_program_id {
+    include!(concat!(env!("OUT_DIR"), "/airdrop_merkle_program_id.rs"));
+}
+pub use airdrop_merkle_program_id::check_id;
+pub use airdrop_merkle_program_id::id;
+pub use airdrop_merkle_program_id::id_const;
+pub use airdrop_merkle_program_id::ID;
+pub use airdrop_merkle_program_id::ID_CONST;
+pub use airdrop_merkle_program_id::ID as AIRDROP_MERKLE_PROGRAM_ID;
+pub use airdrop_merkle_program_id::id as airdrop_merkle_program_id;
 
 #[account]
 #[derive(InitSpace)]
@@ -120,10 +126,7 @@ pub fn claim_handler(
     proof: &[[u8; 32]],
 ) -> Result<()> {
     require!(amount > 0, AirdropError::InvalidClaimAmount);
-    require!(
-        index < distributor.max_claims,
-        AirdropError::InvalidClaimIndex
-    );
+    require!(index < distributor.max_claims, AirdropError::InvalidClaimIndex);
 
     let leaf = hash_leaf(index, &claimant, amount);
     require!(
@@ -131,10 +134,7 @@ pub fn claim_handler(
         AirdropError::InvalidProof
     );
 
-    require!(
-        !claim_bitmap.is_claimed(index),
-        AirdropError::AlreadyClaimed
-    );
+    require!(!claim_bitmap.is_claimed(index), AirdropError::AlreadyClaimed);
     claim_bitmap.set_claimed(index)?;
 
     distributor.claimed_amount = distributor

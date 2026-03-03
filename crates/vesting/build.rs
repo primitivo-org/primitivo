@@ -1,7 +1,7 @@
 use std::{env, fs, path::PathBuf};
 
-const ENV_KEY: &str = "PRIMITIVO_VAULT_ID";
-const DEFAULT_ID: &str = "DLQPS4s2GVmW7iNGHZLWFQsmr4RiEGnxsZQkLXJR8VL4";
+const ENV_KEY: &str = "PRIMITIVO_VESTING_ID";
+const DEFAULT_ID: &str = "8bSvkfYPuNqNRSSZzPD62H1dDPrACYPLLQitkYWVs75q";
 
 fn main() {
     println!("cargo:rerun-if-env-changed={ENV_KEY}");
@@ -10,7 +10,7 @@ fn main() {
     validate_program_id(ENV_KEY, &program_id);
 
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR is set by Cargo"));
-    let out_file = out_dir.join("primitivo_vault_program_id.rs");
+    let out_file = out_dir.join("vesting_program_id.rs");
     let contents = format!("anchor_lang::prelude::declare_id!(\"{}\");\n", program_id);
 
     fs::write(&out_file, contents).unwrap_or_else(|err| {

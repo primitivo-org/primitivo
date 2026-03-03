@@ -1,0 +1,17 @@
+[package]
+name = "vault-crate"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+[lib]
+name = "vault_crate"
+path = "src/lib.rs"
+
+[features]
+default = []
+idl-build = ["anchor-lang/idl-build"]
+
+[dependencies]
+anchor-lang = "0.32.1"
+primitivo-macro = { path = "../macro" }

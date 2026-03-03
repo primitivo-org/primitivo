@@ -1,5 +1,11 @@
 use anchor_lang::prelude::*;
 
+pub mod vesting_program_id {
+    include!(concat!(env!("OUT_DIR"), "/vesting_program_id.rs"));
+}
+pub use vesting_program_id::ID as VESTING_PROGRAM_ID;
+pub use vesting_program_id::id as vesting_program_id;
+
 #[error_code]
 pub enum VestingError {
     #[msg("Vesting total amount must be greater than 0")]

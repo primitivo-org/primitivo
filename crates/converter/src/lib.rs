@@ -1,6 +1,11 @@
 use anchor_lang::prelude::*;
+use primitivo_macro::Ownership;
 
-use crate::Ownership;
+pub mod converter_program_id {
+    include!(concat!(env!("OUT_DIR"), "/converter_program_id.rs"));
+}
+pub use converter_program_id::ID as CONVERTER_PROGRAM_ID;
+pub use converter_program_id::id as converter_program_id;
 
 #[error_code]
 pub enum ConverterError {

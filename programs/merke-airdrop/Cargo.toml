@@ -15,10 +15,11 @@ cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []
 no-log-ix-name = []
-idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build", "primitivo/idl-build"]
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build", "airdrop-merkle/idl-build", "primitivo-macro/idl-build"]
 
 
 [dependencies]
 anchor-lang = "0.32.1"
 anchor-spl = "0.32.1"
-primitivo = { path = "../../crates/primitivo" }
+primitivo-macro = { path = "../../crates/macro" }
+airdrop-merkle = { path = "../../crates/airdrop-merkle" }

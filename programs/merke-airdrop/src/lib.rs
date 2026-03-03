@@ -7,7 +7,7 @@
 
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
-use primitivo::{
+use airdrop_merkle::{
     claim_handler, initialize_distributor_handler, AirdropError, ClaimBitmap, Distributor,
 };
 
@@ -194,7 +194,7 @@ pub struct Claim<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-primitivo::generate_ownership_transfer_accounts!(
+primitivo_macro::generate_ownership_transfer_accounts!(
     state_ty = Distributor,
     state_account = distributor,
     propose_ctx = ProposeOwnershipTransfer,
@@ -202,7 +202,7 @@ primitivo::generate_ownership_transfer_accounts!(
     cancel_ctx = CancelOwnershipTransfer
 );
 
-primitivo::generate_ownership_transfer_handlers!(
+primitivo_macro::generate_ownership_transfer_handlers!(
     propose_fn = propose_distributor_ownership_transfer_impl,
     accept_fn = accept_distributor_ownership_transfer_impl,
     cancel_fn = cancel_distributor_ownership_transfer_impl,

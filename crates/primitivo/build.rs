@@ -22,6 +22,11 @@ const PROGRAM_ID_SPECS: &[ProgramIdSpec] = &[
         out_file: "converter_program_id.rs",
         default_id: "87ReJzgQU1KDbRWRtGC1DTtxUZ6dE3MkcEx2a37fFySr",
     },
+    ProgramIdSpec {
+        env_key: "PRIMITIVO_VAULT_ID",
+        out_file: "vault_program_id.rs",
+        default_id: "DLQPS4s2GVmW7iNGHZLWFQsmr4RiEGnxsZQkLXJR8VL4",
+    },
 ];
 
 fn main() {

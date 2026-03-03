@@ -10,6 +10,7 @@ skip-lint = false
 merke_airdrop = "Dpjs4ihZc6T9Y6mBfgDcmRavoFysLRDpdW5fezbxGZ33"
 vesting = "8bSvkfYPuNqNRSSZzPD62H1dDPrACYPLLQitkYWVs75q"
 converter = "87ReJzgQU1KDbRWRtGC1DTtxUZ6dE3MkcEx2a37fFySr"
+vault = "DLQPS4s2GVmW7iNGHZLWFQsmr4RiEGnxsZQkLXJR8VL4"
 
 [registry]
 url = "https://api.apr.dev"

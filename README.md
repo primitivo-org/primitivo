@@ -11,6 +11,7 @@ Anchor workspace for Solana primitives
 - `programs/merke-airdrop`: on-chain Anchor program entrypoints/accounts.
 - `programs/vesting`: on-chain vesting program (cliff + linear release + revoke).
 - `programs/converter`: on-chain SPL token converter with owner-managed exchange rate.
+- `programs/vault`: on-chain vault for underlying SPL token and derivative token.
 - `crates/primitivo`: reusable Rust module crate (state, handlers, merkle/bitmap logic).
 - `utils/merkle-tree-generator`: Bun TypeScript tool for `root` and `proof` commands.
 
@@ -24,6 +25,7 @@ Supported env vars:
 - `PRIMITIVO_MERKLE_AIRDROP_ID`
 - `PRIMITIVO_VESTING_ID`
 - `PRIMITIVO_CONVERTER_ID`
+- `PRIMITIVO_VAULT_ID`
 
 You can override IDs per build:
 
@@ -153,6 +155,27 @@ Main instructions:
 - `initialize_converter(id, rate_numerator, rate_denominator)`
 - `update_rate(rate_numerator, rate_denominator)` (owner only)
 - `swap(amount_in, minimum_received)`
+
+## Vault Program
+
+`vault` supports:
+
+- one underlying SPL token configured at init
+- derivative token mint controlled by vault program
+- deposit underlying -> mint derivative at current rate
+- redeem derivative -> return underlying at current rate
+- tracks `underlying_assets` in config state
+
+Rate model:
+
+- `deposit`: `derivative_out = amount_in * supply / underlying_assets` (or `1:1` when empty)
+- `redeem`: `underlying_out = derivative_in * underlying_assets / supply`
+
+Main instructions:
+
+- `initialize_vault(id, derivative_decimals)`
+- `deposit(underlying_amount)`
+- `redeem(derivative_amount)`
 
 ## Merkle Data Generator (Bun)
 

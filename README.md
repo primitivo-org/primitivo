@@ -1,4 +1,8 @@
-# primitivo
+<p align="center">
+  <img src="./primitivo_logo.svg" alt="primitivo logo" width="180" />
+</p>
+
+# Primitivo
 
 Anchor workspace for Solana primitives
 
@@ -9,7 +13,7 @@ Anchor workspace for Solana primitives
 - `programs/converter`: on-chain SPL token converter with owner-managed exchange rate.
 - `crates/primitivo`: reusable Rust module crate (state, handlers, merkle/bitmap logic).
 - `utils/merkle-tree-generator`: Bun TypeScript tool for `root` and `proof` commands.
-- `scripts`: TypeScript scripts for distributor initialization and claims.
+
 
 ## Program ID Env Overrides
 
@@ -169,4 +173,3 @@ bun run proof --input ./addresses.txt --address <WALLET>
 ```
 
 `proof` output includes `index`, `amount`, and `proof` for on-chain claim.
-

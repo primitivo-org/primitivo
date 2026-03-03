@@ -166,8 +166,21 @@ describe("vesting ownership integration", () => {
       })
       .signers([newOwner])
       .rpc();
+    
+    async function pumpNetwork(connection: web3.Connection, provider: anchor.AnchorProvider, times = 30) {
+      for (let i = 0; i < times; i++) {
+        const ix = web3.SystemProgram.transfer({
+          fromPubkey: provider.wallet.publicKey,
+          toPubkey: provider.wallet.publicKey,
+          lamports: 0,
+        });
+        await provider.sendAndConfirm(new web3.Transaction().add(ix));
+        await new Promise(r => setTimeout(r, 200));
+      }
+    }
+    await pumpNetwork(provider.connection, provider, 40);
 
-    await new Promise((resolve) => setTimeout(resolve, 3200));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     let failed = false;
     try {

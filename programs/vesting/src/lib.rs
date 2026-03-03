@@ -5,7 +5,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 use primitivo::{
     claimable_amount, increase_released_amount, unvested_amount_on_revoke, validate_vesting_params,
-    Ownership, VestingError,
+    Ownership, Pausable, VestingError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/vesting_program_id.rs"));
@@ -17,6 +17,7 @@ pub mod vesting {
     pub fn initialize_vesting_config(ctx: Context<InitializeVestingConfig>, id: u64) -> Result<()> {
         let cfg = &mut ctx.accounts.config;
         cfg.ownership = Ownership::new(ctx.accounts.authority.key());
+        cfg.pausable = Pausable::new();
         cfg.seed_authority = ctx.accounts.authority.key();
         cfg.mint = ctx.accounts.mint.key();
         cfg.vault = ctx.accounts.vault.key();
@@ -33,6 +34,7 @@ pub mod vesting {
         cliff_ts: i64,
         end_ts: i64,
     ) -> Result<()> {
+        primitivo::require_not_paused!(ctx, config);
         ctx.accounts
             .config
             .ownership
@@ -62,6 +64,7 @@ pub mod vesting {
     }
 
     pub fn claim(ctx: Context<ClaimVested>) -> Result<()> {
+        primitivo::require_not_paused!(ctx, config);
         let now_ts = Clock::get()?.unix_timestamp;
         let schedule = &mut ctx.accounts.schedule;
 
@@ -108,6 +111,7 @@ pub mod vesting {
     }
 
     pub fn revoke(ctx: Context<RevokeSchedule>) -> Result<()> {
+        primitivo::require_not_paused!(ctx, config);
         ctx.accounts
             .config
             .ownership
@@ -170,12 +174,21 @@ pub mod vesting {
     pub fn cancel_ownership_transfer(ctx: Context<CancelVestingOwnershipTransfer>) -> Result<()> {
         cancel_vesting_ownership_transfer_impl(ctx)
     }
+
+    pub fn pause(ctx: Context<PauseVesting>) -> Result<()> {
+        pause_vesting_impl(ctx)
+    }
+
+    pub fn unpause(ctx: Context<UnpauseVesting>) -> Result<()> {
+        unpause_vesting_impl(ctx)
+    }
 }
 
 #[account]
 #[derive(InitSpace)]
 pub struct VestingConfig {
     pub ownership: Ownership,
+    pub pausable: Pausable,
     pub seed_authority: Pubkey,
     pub mint: Pubkey,
     pub vault: Pubkey,
@@ -352,5 +365,20 @@ primitivo::generate_ownership_transfer_handlers!(
     propose_ctx = ProposeVestingOwnershipTransfer,
     accept_ctx = AcceptVestingOwnershipTransfer,
     cancel_ctx = CancelVestingOwnershipTransfer,
+    state_account = config
+);
+
+primitivo::generate_pausable_accounts!(
+    state_ty = VestingConfig,
+    state_account = config,
+    pause_ctx = PauseVesting,
+    unpause_ctx = UnpauseVesting
+);
+
+primitivo::generate_pausable_handlers!(
+    pause_fn = pause_vesting_impl,
+    unpause_fn = unpause_vesting_impl,
+    pause_ctx = PauseVesting,
+    unpause_ctx = UnpauseVesting,
     state_account = config
 );

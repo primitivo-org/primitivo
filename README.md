@@ -62,6 +62,12 @@ Ownership macros for programs:
 - `generate_ownership_transfer_accounts!`
 - `generate_ownership_transfer_handlers!`
 
+Pausable macros for programs:
+
+- `generate_pausable_accounts!`
+- `generate_pausable_handlers!`
+- `require_not_paused!(ctx, state_account)`
+
 Detailed usage:
 
 1. Ensure your state account has an `ownership: Ownership` field.
@@ -132,6 +138,7 @@ Main instructions:
 - `create_schedule(total_amount, start_ts, cliff_ts, end_ts)`
 - `claim()`
 - `revoke()`
+- `pause()` / `unpause()`
 
 ## Converter Program
 

@@ -3,12 +3,10 @@
 
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
-use primitivo_macro::{
-    Ownership, Pausable,
-};
+use primitivo_macro::{Ownership, Pausable};
 use vesting_crate::{
     claimable_amount, increase_released_amount, unvested_amount_on_revoke, validate_vesting_params,
-    VestingError,
+    VestingConfig, VestingError, VestingSchedule,
 };
 
 include!(concat!(env!("OUT_DIR"), "/vesting_program_id.rs"));
@@ -81,11 +79,7 @@ pub mod vesting {
             now_ts,
         )?;
         let total_amount = schedule.total_amount;
-        increase_released_amount(
-            &mut schedule.released_amount,
-            claim_amount,
-            total_amount,
-        )?;
+        increase_released_amount(&mut schedule.released_amount, claim_amount, total_amount)?;
 
         let cfg = &ctx.accounts.config;
         let id_bytes = cfg.id.to_le_bytes();
@@ -185,33 +179,6 @@ pub mod vesting {
     pub fn unpause(ctx: Context<UnpauseVesting>) -> Result<()> {
         unpause_vesting_impl(ctx)
     }
-}
-
-#[account]
-#[derive(InitSpace)]
-pub struct VestingConfig {
-    pub ownership: Ownership,
-    pub pausable: Pausable,
-    pub seed_authority: Pubkey,
-    pub mint: Pubkey,
-    pub vault: Pubkey,
-    pub id: u64,
-    pub bump: u8,
-    pub vault_bump: u8,
-}
-
-#[account]
-#[derive(InitSpace)]
-pub struct VestingSchedule {
-    pub config: Pubkey,
-    pub beneficiary: Pubkey,
-    pub total_amount: u64,
-    pub released_amount: u64,
-    pub start_ts: i64,
-    pub cliff_ts: i64,
-    pub end_ts: i64,
-    pub revoked_at: i64,
-    pub bump: u8,
 }
 
 #[derive(Accounts)]

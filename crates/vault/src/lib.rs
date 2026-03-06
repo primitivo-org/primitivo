@@ -1,16 +1,7 @@
 use anchor_lang::prelude::*;
 use primitivo_macro::Ownership;
 
-pub mod vault_program_id {
-    include!(concat!(env!("OUT_DIR"), "/primitivo_vault_program_id.rs"));
-}
-pub use vault_program_id::check_id;
-pub use vault_program_id::id;
-pub use vault_program_id::id_const;
-pub use vault_program_id::ID;
-pub use vault_program_id::ID_CONST;
-pub use vault_program_id::ID as VAULT_PROGRAM_ID;
-pub use vault_program_id::id as vault_program_id;
+include!(concat!(env!("OUT_DIR"), "/primitivo_vault_program_id.rs"));
 
 #[account]
 #[derive(InitSpace)]

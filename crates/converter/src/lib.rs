@@ -1,11 +1,7 @@
 use anchor_lang::prelude::*;
 use primitivo_macro::Ownership;
 
-pub mod converter_program_id {
-    include!(concat!(env!("OUT_DIR"), "/converter_program_id.rs"));
-}
-pub use converter_program_id::ID as CONVERTER_PROGRAM_ID;
-pub use converter_program_id::id as converter_program_id;
+include!(concat!(env!("OUT_DIR"), "/converter_program_id.rs"));
 
 #[error_code]
 pub enum ConverterError {
@@ -19,6 +15,23 @@ pub enum ConverterError {
     ZeroOutput,
     #[msg("Minimum received not satisfied")]
     SlippageExceeded,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct ConverterConfig {
+    pub ownership: Ownership,
+    pub seed_authority: Pubkey,
+    pub from_mint: Pubkey,
+    pub to_mint: Pubkey,
+    pub from_vault: Pubkey,
+    pub to_vault: Pubkey,
+    pub id: u64,
+    pub rate_numerator: u64,
+    pub rate_denominator: u64,
+    pub bump: u8,
+    pub from_vault_bump: u8,
+    pub to_vault_bump: u8,
 }
 
 pub fn validate_rate(rate_numerator: u64, rate_denominator: u64) -> Result<()> {
@@ -36,7 +49,8 @@ pub fn quote_amount_out(amount_in: u64, rate_numerator: u64, rate_denominator: u
         .checked_div(rate_denominator as u128)
         .ok_or(ConverterError::ArithmeticOverflow)?;
 
-    let amount_out = u64::try_from(amount_out).map_err(|_| error!(ConverterError::ArithmeticOverflow))?;
+    let amount_out =
+        u64::try_from(amount_out).map_err(|_| error!(ConverterError::ArithmeticOverflow))?;
     require!(amount_out > 0, ConverterError::ZeroOutput);
     Ok(amount_out)
 }
@@ -54,6 +68,9 @@ pub fn update_rate_handler(
 }
 
 pub fn assert_minimum_received(amount_out: u64, minimum_received: u64) -> Result<()> {
-    require!(amount_out >= minimum_received, ConverterError::SlippageExceeded);
+    require!(
+        amount_out >= minimum_received,
+        ConverterError::SlippageExceeded
+    );
     Ok(())
 }

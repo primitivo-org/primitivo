@@ -1,10 +1,7 @@
 use anchor_lang::prelude::*;
+use primitivo_macro::{Ownership, Pausable};
 
-pub mod vesting_program_id {
-    include!(concat!(env!("OUT_DIR"), "/vesting_program_id.rs"));
-}
-pub use vesting_program_id::ID as VESTING_PROGRAM_ID;
-pub use vesting_program_id::id as vesting_program_id;
+include!(concat!(env!("OUT_DIR"), "/vesting_program_id.rs"));
 
 #[error_code]
 pub enum VestingError {
@@ -20,7 +17,39 @@ pub enum VestingError {
     AlreadyRevoked,
 }
 
-pub fn validate_vesting_params(total_amount: u64, start_ts: i64, cliff_ts: i64, end_ts: i64) -> Result<()> {
+#[account]
+#[derive(InitSpace)]
+pub struct VestingConfig {
+    pub ownership: Ownership,
+    pub pausable: Pausable,
+    pub seed_authority: Pubkey,
+    pub mint: Pubkey,
+    pub vault: Pubkey,
+    pub id: u64,
+    pub bump: u8,
+    pub vault_bump: u8,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct VestingSchedule {
+    pub config: Pubkey,
+    pub beneficiary: Pubkey,
+    pub total_amount: u64,
+    pub released_amount: u64,
+    pub start_ts: i64,
+    pub cliff_ts: i64,
+    pub end_ts: i64,
+    pub revoked_at: i64,
+    pub bump: u8,
+}
+
+pub fn validate_vesting_params(
+    total_amount: u64,
+    start_ts: i64,
+    cliff_ts: i64,
+    end_ts: i64,
+) -> Result<()> {
     require!(total_amount > 0, VestingError::InvalidTotalAmount);
     require!(start_ts <= cliff_ts, VestingError::InvalidSchedule);
     require!(cliff_ts <= end_ts, VestingError::InvalidSchedule);
@@ -36,7 +65,13 @@ pub fn effective_vesting_time(end_ts: i64, revoked_at: i64, now_ts: i64) -> i64 
     t
 }
 
-pub fn vested_amount(total_amount: u64, start_ts: i64, cliff_ts: i64, end_ts: i64, at_ts: i64) -> Result<u64> {
+pub fn vested_amount(
+    total_amount: u64,
+    start_ts: i64,
+    cliff_ts: i64,
+    end_ts: i64,
+    at_ts: i64,
+) -> Result<u64> {
     validate_vesting_params(total_amount, start_ts, cliff_ts, end_ts)?;
 
     if at_ts < cliff_ts {
@@ -75,7 +110,11 @@ pub fn claimable_amount(
         .ok_or_else(|| error!(VestingError::ArithmeticOverflow))
 }
 
-pub fn increase_released_amount(released_amount: &mut u64, claim_amount: u64, total_amount: u64) -> Result<()> {
+pub fn increase_released_amount(
+    released_amount: &mut u64,
+    claim_amount: u64,
+    total_amount: u64,
+) -> Result<()> {
     require!(claim_amount > 0, VestingError::NoClaimableAmount);
 
     let next = released_amount
@@ -87,7 +126,13 @@ pub fn increase_released_amount(released_amount: &mut u64, claim_amount: u64, to
     Ok(())
 }
 
-pub fn unvested_amount_on_revoke(total_amount: u64, start_ts: i64, cliff_ts: i64, end_ts: i64, now_ts: i64) -> Result<u64> {
+pub fn unvested_amount_on_revoke(
+    total_amount: u64,
+    start_ts: i64,
+    cliff_ts: i64,
+    end_ts: i64,
+    now_ts: i64,
+) -> Result<u64> {
     let at_ts = if now_ts < end_ts { now_ts } else { end_ts };
     let vested = vested_amount(total_amount, start_ts, cliff_ts, end_ts, at_ts)?;
     total_amount

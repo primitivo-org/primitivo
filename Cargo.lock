@@ -2969,6 +2969,7 @@ name = "vesting-crate"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
+ "primitivo-macro",
 ]
 
 [[package]]

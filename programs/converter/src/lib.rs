@@ -3,12 +3,11 @@
 
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
-use primitivo_macro::{
-    Ownership,
-};
 use converter_crate::{
-    assert_minimum_received, quote_amount_out, update_rate_handler, validate_rate, ConverterError,
+    assert_minimum_received, quote_amount_out, update_rate_handler, validate_rate, ConverterConfig,
+    ConverterError,
 };
+use primitivo_macro::Ownership;
 
 include!(concat!(env!("OUT_DIR"), "/converter_program_id.rs"));
 
@@ -69,7 +68,8 @@ pub mod converter {
             to: ctx.accounts.from_vault.to_account_info(),
             authority: ctx.accounts.user.to_account_info(),
         };
-        let debit_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), debit_accounts);
+        let debit_ctx =
+            CpiContext::new(ctx.accounts.token_program.to_account_info(), debit_accounts);
         token::transfer(debit_ctx, amount_in)?;
 
         let id_bytes = cfg.id.to_le_bytes();
@@ -113,23 +113,6 @@ pub mod converter {
     pub fn cancel_ownership_transfer(ctx: Context<CancelConverterOwnershipTransfer>) -> Result<()> {
         cancel_converter_ownership_transfer_impl(ctx)
     }
-}
-
-#[account]
-#[derive(InitSpace)]
-pub struct ConverterConfig {
-    pub ownership: Ownership,
-    pub seed_authority: Pubkey,
-    pub from_mint: Pubkey,
-    pub to_mint: Pubkey,
-    pub from_vault: Pubkey,
-    pub to_vault: Pubkey,
-    pub id: u64,
-    pub rate_numerator: u64,
-    pub rate_denominator: u64,
-    pub bump: u8,
-    pub from_vault_bump: u8,
-    pub to_vault_bump: u8,
 }
 
 #[derive(Accounts)]

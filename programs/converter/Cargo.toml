@@ -3,6 +3,7 @@ name = "converter"
 version = "0.1.0"
 description = "primitivo token converter program"
 edition = "2021"
+license = "MIT"
 build = "build.rs"
 
 [lib]

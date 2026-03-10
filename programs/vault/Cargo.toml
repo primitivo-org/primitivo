@@ -3,6 +3,7 @@ name = "vault"
 version = "0.1.0"
 description = "primitivo basic vault"
 edition = "2021"
+license = "MIT"
 build = "build.rs"
 
 [lib]

@@ -3,6 +3,7 @@ name = "vesting"
 version = "0.1.0"
 description = "primitivo vesting program"
 edition = "2021"
+license = "MIT"
 build = "build.rs"
 
 [lib]

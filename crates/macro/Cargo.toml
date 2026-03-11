@@ -1,6 +1,6 @@
 [package]
 name = "primitivo-macro"
-version = "0.1.0"
+version = "0.0.1"
 description = "Shared ownership and pausable helpers for Primitivo programs"
 edition = "2021"
 license = "MIT"

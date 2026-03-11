@@ -557,7 +557,7 @@ checksum = "3d52eff69cd5e647efe296129160853a42795992097e8af39800e1060caeea9b"
 
 [[package]]
 name = "converter"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
@@ -942,7 +942,7 @@ dependencies = [
 
 [[package]]
 name = "merke_airdrop"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
@@ -1096,7 +1096,7 @@ dependencies = [
 
 [[package]]
 name = "primitivo-airdrop-merkle"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
@@ -1106,14 +1106,14 @@ dependencies = [
 
 [[package]]
 name = "primitivo-macro"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anchor-lang",
 ]
 
 [[package]]
 name = "primitivo-token-converter"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anchor-lang",
  "primitivo-macro",
@@ -1121,7 +1121,7 @@ dependencies = [
 
 [[package]]
 name = "primitivo-vault"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anchor-lang",
  "primitivo-macro",
@@ -1129,7 +1129,7 @@ dependencies = [
 
 [[package]]
 name = "primitivo-vesting-crate"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anchor-lang",
  "primitivo-macro",
@@ -2948,7 +2948,7 @@ dependencies = [
 
 [[package]]
 name = "vault"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
@@ -2964,7 +2964,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vesting"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anchor-lang",
  "anchor-spl",

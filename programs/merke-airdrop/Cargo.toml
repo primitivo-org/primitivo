@@ -1,6 +1,6 @@
 [package]
 name = "merke_airdrop"
-version = "0.1.0"
+version = "0.0.1"
 description = "Primitivo Merkle airdrop program"
 edition = "2021"
 license = "MIT"

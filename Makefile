@@ -19,19 +19,19 @@ publish: \
 	publish-primitivo-vault
 
 publish-primitivo-macro-dry-run:
-	cargo publish -p primitivo-macro --dry-run
+	cargo package -p primitivo-macro
 
 publish-primitivo-airdrop-merkle-dry-run:
-	cargo publish -p primitivo-airdrop-merkle --dry-run
+	cargo package -p primitivo-airdrop-merkle
 
 publish-primitivo-token-converter-dry-run:
-	cargo publish -p primitivo-token-converter --dry-run
+	cargo package -p primitivo-token-converter
 
 publish-primitivo-vesting-crate-dry-run:
-	cargo publish -p primitivo-vesting-crate --dry-run
+	cargo package -p primitivo-vesting-crate
 
 publish-primitivo-vault-dry-run:
-	cargo publish -p primitivo-vault --dry-run
+	cargo package -p primitivo-vault
 
 publish-primitivo-macro:
 	cargo publish -p primitivo-macro

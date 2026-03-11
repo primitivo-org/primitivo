@@ -12,13 +12,17 @@ Anchor workspace for Solana primitives
 - `programs/vesting`: on-chain vesting program (cliff + linear release + revoke).
 - `programs/converter`: on-chain SPL token converter with owner-managed exchange rate.
 - `programs/vault`: on-chain vault for underlying SPL token and derivative token.
-- `crates/primitivo`: reusable Rust module crate (state, handlers, merkle/bitmap logic).
+- `crates/macro`: shared ownership and pausable helpers.
+- `crates/airdrop-merkle`: shared Merkle airdrop logic and account types.
+- `crates/vesting`: shared vesting logic.
+- `crates/converter`: shared token converter logic.
+- `crates/vault`: shared vault logic and account types.
 - `utils/merkle-tree-generator`: Bun TypeScript tool for `root` and `proof` commands.
 
 
 ## Program ID Env Overrides
 
-`crates/primitivo/build.rs` generates program-id files from env vars.
+Each shared crate with program-specific state generates its program ID from env vars in its own `build.rs`.
 
 Supported env vars:
 
@@ -39,7 +43,7 @@ Local defaults are set in `.cargo/config.toml` for this repo.
 
 ## Ownership Helper
 
-`crates/primitivo/src/ownership.rs` provides reusable ownership state:
+`crates/macro/src/ownership.rs` provides reusable ownership state:
 
 - `owner`
 - `pending_owner`
@@ -76,7 +80,7 @@ Detailed usage:
 2. Generate account context structs near the bottom of your program file:
 
 ```rust
-primitivo::generate_ownership_transfer_accounts!(
+primitivo_macro::generate_ownership_transfer_accounts!(
     state_ty = Distributor,
     state_account = distributor,
     propose_ctx = ProposeOwnershipTransfer,
@@ -88,7 +92,7 @@ primitivo::generate_ownership_transfer_accounts!(
 3. Generate instruction handlers inside `#[program] mod ...`:
 
 ```rust
-primitivo::generate_ownership_transfer_handlers!(
+primitivo_macro::generate_ownership_transfer_handlers!(
     propose_fn = propose_ownership_transfer,
     accept_fn = accept_ownership_transfer,
     cancel_fn = cancel_ownership_transfer,

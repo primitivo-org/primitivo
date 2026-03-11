@@ -24,4 +24,4 @@ idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build", "airdrop-merkle/id
 anchor-lang = "0.32.1"
 anchor-spl = "0.32.1"
 primitivo-macro = { path = "../../crates/macro" }
-airdrop-merkle = { path = "../../crates/airdrop-merkle" }
+airdrop-merkle = { package = "primitivo-airdrop-merkle", path = "../../crates/airdrop-merkle" }

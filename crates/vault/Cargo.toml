@@ -1,5 +1,5 @@
 [package]
-name = "vault-crate"
+name = "primitivo-vault"
 version = "0.1.0"
 description = "Shared vault logic and account types for Primitivo"
 edition = "2021"

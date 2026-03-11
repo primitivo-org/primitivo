@@ -23,4 +23,4 @@ idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build", "vesting-crate/idl
 anchor-lang = "0.32.1"
 anchor-spl = "0.32.1"
 primitivo-macro = { path = "../../crates/macro" }
-vesting-crate = { path = "../../crates/vesting" }
+vesting-crate = { package = "primitivo-vesting-crate", path = "../../crates/vesting" }

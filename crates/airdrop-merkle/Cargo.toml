@@ -1,5 +1,5 @@
 [package]
-name = "airdrop-merkle"
+name = "primitivo-airdrop-merkle"
 version = "0.1.0"
 description = "Shared Merkle airdrop logic and account types for Primitivo"
 edition = "2021"

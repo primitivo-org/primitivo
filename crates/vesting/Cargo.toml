@@ -1,5 +1,5 @@
 [package]
-name = "vesting-crate"
+name = "primitivo-vesting-crate"
 version = "0.1.0"
 description = "Shared vesting logic for Primitivo"
 edition = "2021"

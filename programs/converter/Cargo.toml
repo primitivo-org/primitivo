@@ -23,4 +23,4 @@ idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build", "converter-crate/i
 anchor-lang = "0.32.1"
 anchor-spl = "0.32.1"
 primitivo-macro = { path = "../../crates/macro" }
-converter-crate = { path = "../../crates/converter" }
+converter-crate = { package = "primitivo-token-converter", path = "../../crates/converter" }

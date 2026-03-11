@@ -1,5 +1,5 @@
 [package]
-name = "converter-crate"
+name = "primitivo-token-converter"
 version = "0.1.0"
 description = "Shared token converter logic for Primitivo"
 edition = "2021"

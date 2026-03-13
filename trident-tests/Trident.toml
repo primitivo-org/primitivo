@@ -1,0 +1,20 @@
+[fuzz.metrics]
+enabled = true
+
+
+[[fuzz.programs]]
+address = "DLQPS4s2GVmW7iNGHZLWFQsmr4RiEGnxsZQkLXJR8VL4"
+program = "../target/deploy/vault.so"
+
+[[fuzz.programs]]
+address = "Dpjs4ihZc6T9Y6mBfgDcmRavoFysLRDpdW5fezbxGZ33"
+program = "../target/deploy/merke_airdrop.so"
+
+[[fuzz.programs]]
+address = "8bSvkfYPuNqNRSSZzPD62H1dDPrACYPLLQitkYWVs75q"
+program = "../target/deploy/vesting.so"
+
+[[fuzz.programs]]
+address = "87ReJzgQU1KDbRWRtGC1DTtxUZ6dE3MkcEx2a37fFySr"
+program = "../target/deploy/converter.so"
+ 
